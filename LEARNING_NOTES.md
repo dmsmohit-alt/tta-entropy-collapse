@@ -34,6 +34,30 @@ minimisation does not distinguish them. The `-lambda * H(p_bar)` term does.
 **Why `from __future__ import annotations` and type hints?**
 Readable signatures, and tools can catch mistakes early.
 
+## Phase 1
+
+**Entropy gradient.** For one sample with p = softmax(z): dH/dz_k = -p_k (log p_k + H).
+So the bias update under GD is b_dot_k = mean_i p_ik (log p_ik + H_i). This is
+checked against finite differences in `tests/test_toy_model.py` (and against torch
+autograd if torch is installed). Phase 2 turns this into the rich-get-richer argument.
+
+**Why start from the Bayes classifier?** It is accurate and has a balanced marginal,
+so any collapse is caused by the injected bias `delta`, not by a bad classifier.
+
+**Why numpy and not torch here?** The model is tiny; analytic gradients are faster
+on a CPU, and give an independent check for the later autograd computation.
+
+**Why report "converged" separately from "collapsed"?** Near collapse the gradient
+decays slowly (~1/t), so a gradient-norm stopping rule would never fire. We classify
+by final H(p_bar) and report the flag honestly instead.
+
+**A plotting bug worth remembering.** Floats that "should" be equal (delta/margin on
+different grids) differ in the last bits; pivoting on them produced fake blank cells.
+Round before grouping. Always look at the figure, not only the numbers.
+
+**What this phase does NOT show.** It shows *numerically* where the boundary is for
+one family of toy problems. It does not derive the threshold; that is Phase 2.
+
 ## Open questions to verify numerically (later phases, not claimed yet)
 
 - Is the collapse threshold a sharp boundary in initial bias? (Phase 1)

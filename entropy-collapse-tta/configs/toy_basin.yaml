@@ -1,0 +1,28 @@
+# Phase 1: toy linear-softmax model, bias-vs-collapse basin map.
+# Run:  python scripts/run_theory.py --config configs/toy_basin.yaml
+# Small/fast run:  ... toy.n_per_class=50 sweep.n_delta=9 sweep.sep_grid=[2,3]
+experiment:
+  name: toy_basin
+
+toy:
+  K: 5
+  d: 10
+  n_per_class: 200
+  sep: 3.0              # ||mu_k||; default operating point for 1D curves and trajectories
+  sigma: 1.0
+  eta: 2.0              # GD step size on the entropy loss
+  steps: 2000
+  record_every: 20
+  grad_tol: 1.0e-7
+  collapse_tau: 0.1     # collapse := final H(p_bar) < tau * log K
+
+sweep:
+  # delta is sampled as a fraction of the logit margin sep^2/sigma^2 (a sampling choice only;
+  # whether the threshold actually scales with the margin is read off the results).
+  delta_rel_max: 1.2
+  n_delta: 25
+  sep_grid: [1.0, 2.0, 3.0, 4.0, 5.0]
+  adapt_modes: [b, Wb]          # 1D curve at toy.sep for both; 2D map uses "b" only
+  thr_n_grid: 13                # grid points for the threshold scan before bisection
+  thr_bisect_iters: 10
+  trajectory_ratios: [0.0, 0.5, 0.9, 1.1, 1.5]   # multiples of delta* (seed 0, adapt=b, toy.sep)

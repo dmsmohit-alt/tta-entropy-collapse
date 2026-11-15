@@ -8,6 +8,3 @@ data_cache/
 *.pth
 results/*
 !results/.gitkeep
-.venv/
-__pycache__/
-.pytest_cache/
