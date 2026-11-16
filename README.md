@@ -3,7 +3,7 @@
 A dynamical analysis of test-time entropy minimisation (TENT) and a stable
 marginal-entropy correction for continual shift.
 
-**Status: Phases 0-2 done (scaffold, toy model, theory/stability analysis).** Real-network experiments not run yet.
+**Status: Phases 0-2 done (scaffold, toy model, theory/stability analysis). Phase 3 (real-network pipeline) code is written; its experiments have NOT been run yet.**
 Every number below comes from a saved run (config + CSV in `results/`); anything else is `TBD`.
 
 ## Setup
@@ -97,6 +97,34 @@ Runs: `toy_stability/5dd255d1` (84 rows = 3 data seeds x 7 separations x 4 lambd
   at every initial bias up to 2 x margin, while `lam = 0` collapsed 3/3 from 1.2 x margin. [observed; toy only]
 - **Caveats:** finite-sample noise at large separation (sep 5: population curvature +0.0002 but sample curvature negative);
   the 1-D reduction does not hold for 2 of 9 sample seeds; only K=5; no claim about deep networks yet.
+
+### Phase 3: real-network baseline (Source / BN-adapt / TENT on CIFAR-10-C) - code only, no results yet
+
+Everything below is `TBD` until you run it (the author's sandbox had no GPU, no torch and no internet).
+
+```bash
+pip install -r requirements.txt                        # torch with CUDA already installed; adds torchvision
+python scripts/download_cifar10c.py                    # ~2.9 GB, md5-checked, -> data_cache/CIFAR-10-C
+python scripts/train_source.py --epochs 30             # standard ResNet-18 -> checkpoints/resnet18_cifar10_seed0.pt
+python scripts/check_setup.py --config configs/stream_tent.yaml        # data layout + source-error sanity table
+python scripts/run_stream.py --config configs/stream_smoke.yaml        # 20-step plumbing run (not a result)
+python scripts/run_stream.py --config configs/stream_tent.yaml         # 3 methods x 3 seeds, 10 cycles
+python scripts/aggregate_runs.py --exp-dir results/stream_tent         # mean +/- std (sample std, ddof=1)
+pytest -q                                                              # includes tests/test_tta.py (needs torch)
+```
+
+Per run: `results/stream_tent/<method>/<confighash>_seed<N>/{config.yaml, metrics.csv, summary.json, run.log}`.
+`metrics.csv` has one row per batch: `online_err, mean_H, H_bar_batch, H_bar_ema, top_frac, top_class, collapsed_flag`.
+Collapse rule (assumption, in `src/metrics/collapse.py`): `top_frac > 0.9` for 5 consecutive batches; we report the
+first batch of the first such streak (`time_to_collapse_start`) and the batch where it was detected.
+
+| Experiment | Result |
+|---|---|
+| Source / BN-adapt / TENT error on the 10-cycle stream (3 seeds) | TBD |
+| TENT time-to-collapse (3 seeds) | TBD (collapse is not guaranteed in 10 cycles; if absent, run `stream.num_cycles=20+` or raise lr, and report what is seen) |
+
+Notes: the stream order depends on the seed only, so all methods see identical batches. The source model is a single
+trained checkpoint, so seed std reflects stream order, not source-training variance (a limitation).
 
 ### Not yet run
 

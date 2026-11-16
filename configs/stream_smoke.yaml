@@ -1,0 +1,22 @@
+# Tiny plumbing run (2 corruptions, 20 steps, 1 seed). Proves the pipeline works; numbers are NOT results.
+experiment:
+  name: stream_smoke
+  seeds: [0]
+  skip_existing: false
+data:
+  root: data_cache/CIFAR-10-C
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+stream:
+  batch_size: 200
+  num_corruptions: 2
+  severity: 5
+  num_cycles: 1
+  shuffle: true
+  max_steps: 20
+methods: [source, bn_adapt, tent]
+tta:
+  tent: {optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1}

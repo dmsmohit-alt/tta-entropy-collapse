@@ -1,0 +1,33 @@
+# Phase 3: Source and TENT on a long continual CIFAR-10-C stream (15 corruptions, severity 5, repeated).
+# Run:  python scripts/run_stream.py --config configs/stream_tent.yaml
+# Small:  ... stream.num_corruptions=3 stream.num_cycles=2      Long:  ... stream.num_cycles=20
+experiment:
+  name: stream_tent
+  seeds: [0, 1, 2]        # seeds change the order of images inside each segment (and nothing else)
+  skip_existing: true     # re-running the same command skips finished (method, seed) runs
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint      # checkpoint | robustbench
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null              # robustbench: e.g. Standard (WRN-28-10; use a Colab T4)
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 15     # first N of the 15 benchmark corruptions (or give an explicit stream.corruptions list)
+  severity: 5
+  num_cycles: 10          # 10 cycles = 7500 steps at batch 200
+  shuffle: true
+  max_steps: null
+
+methods: [source, bn_adapt, tent]
+tta:
+  tent:
+    optimizer: adam
+    lr: 1.0e-3            # TENT paper: Adam, lr 1e-3 for CIFAR. Batch size there is 128; we default to 200 (config)
+    betas: [0.9, 0.999]
+    weight_decay: 0.0
+    steps: 1

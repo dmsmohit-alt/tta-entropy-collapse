@@ -8,8 +8,8 @@ pyyaml>=6.0
 torch>=2.0
 pytest>=7.0
 
-# Added in later phases (do not install yet unless you want to):
-# torchvision            # Phase 3
-# robustbench            # Phase 3 (pretrained CIFAR-10 models); installed from GitHub
+# Phase 3 and later:
+torchvision>=0.15          # Phase 3 (only scripts/train_source.py needs it). With CUDA: install the build matching your torch
+# robustbench              # optional: pip install git+https://github.com/RobustBench/robustbench.git  (model.source=robustbench)
 # imagecorruptions       # Phase 3 fallback if CIFAR-10-C cannot be downloaded
 # streamlit              # Phase 6

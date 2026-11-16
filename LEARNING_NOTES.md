@@ -86,6 +86,32 @@ Also: a hand-checked table caught three wrong numbers in a draft of THEORY.md. A
 **What this phase does not prove.** Bias-only, K=5, orthogonal means, Monte-Carlo evaluated constants. The threshold
 `g_c` and the sign change of `alpha_L` near margin 4.2 have no closed form here.
 
+## Phase 3
+
+**What TENT actually does.** (1) BatchNorm normalises with the *current test batch's* mean/variance instead of the stored
+training statistics (we set `running_mean = None`); (2) only the BN scale/shift (gamma, beta) get gradients; everything else is
+frozen; (3) one Adam step per batch on the mean prediction entropy. ~10k parameters out of 11M for ResNet-18.
+
+**Why return the pre-update logits?** Prediction for batch t is made before the step on batch t. Otherwise the model
+would "see" its own adaptation on exactly the images it is scored on.
+
+**Why BNAdapt (extra baseline)?** Using batch statistics alone is already an adaptation. Comparing Source, BNAdapt and TENT
+separates "free" gains from the gains (and the collapse) caused by entropy gradient steps.
+
+**Why seeds shuffle the stream.** Source and TENT are deterministic given the data, so without shuffling, 3 seeds would give 3 identical
+numbers. Seeds change the order of images inside each corruption segment (and the same seed gives every method the same batches).
+
+**Why drop_last?** BN statistics from a tiny final batch are noisy. With batch 200 and 10,000 images nothing is dropped.
+
+**Why train our own ResNet-18?** RobustBench's CIFAR-10 ResNet-18 uses PRIME augmentation (already robust to corruptions), so it is not
+the usual "standard model under shift" setting. WRN-28-10 `Standard` is the benchmark model but heavy for 4 GB VRAM.
+
+**Collapse definition.** `top_frac > 0.9` for 5 consecutive batches. `top_frac` is the share of the batch predicted as its most common class.
+It is an assumption; the log keeps `top_frac` for every batch, so other thresholds can be applied afterwards without re-running.
+
+**What was verified how.** Numpy parts (metrics, collapse detector, loader, stream) have tests that ran. Torch parts (ResNet,
+BN selection, Source/BNAdapt/TENT) have tests that were written but not executed by the author; run `pytest tests/test_tta.py`.
+
 ## Open questions to verify numerically (later phases, not claimed yet)
 
 - Does the toy stability picture (negative curvature at low margin, `lam > lam_c` fixes it) show up in a real network? (Phases 3-5)
