@@ -3,7 +3,7 @@
 A dynamical analysis of test-time entropy minimisation (TENT) and a stable
 marginal-entropy correction for continual shift.
 
-**Status: Phases 0-1 done (scaffold + toy model).** Real-network experiments not run yet.
+**Status: Phases 0-2 done (scaffold, toy model, theory/stability analysis).** Real-network experiments not run yet.
 Every number below comes from a saved run (config + CSV in `results/`); anything else is `TBD`.
 
 ## Setup
@@ -23,6 +23,15 @@ Phase 1 (toy model, CPU, ~6 min with the default config):
 python scripts/run_theory.py --config configs/toy_basin.yaml     # prints the run dir
 python scripts/make_plots.py --run-dir results/toy_basin/<hash>  # figures/ inside it
 # quick smoke run: ... toy.n_per_class=50 sweep.n_delta=9 sweep.sep_grid=[2,3]
+```
+
+Phase 2 (stability / eta*, CPU, about 10 min; infomax basin check about 2 min):
+
+```bash
+python scripts/run_stability.py --config configs/toy_stability.yaml
+python scripts/make_plots_stability.py --run-dir results/toy_stability/<hash>
+python scripts/run_infomax_basin.py --config configs/toy_infomax_basin.yaml
+# quick run: ... stability.sep_grid=[2.0,3.0] stability.lam_list=[0.0,1.0] population.n_xi=20000
 ```
 
 ## Results
@@ -66,11 +75,33 @@ Status of each statement (see THEORY.md in Phase 2 for derivations):
   grad-norm < 1e-7 (only 21% of non-collapsed runs flagged `converged`), though
   their H(p_bar) is flat; collapsed runs never meet the tolerance (gradient decays ~1/t).
 
+### Phase 2: derivations and stability (see THEORY.md for every derivation and its status label)
+
+Runs: `toy_stability/5dd255d1` (84 rows = 3 data seeds x 7 separations x 4 lambdas, N=1000, K=5),
+`toy_infomax_basin/a28b7df4`. Bias-only adaptation, toy model only.
+
+- **Derived and verified:** bias flow `b_dot = E[p(log p + H)] - lam E[p(log pbar - <log pbar>_p)]`;
+  at the balanced point the Hessian is `alpha_J (I - 11^T/K)` with `alpha_J = alpha_L + lam K s^2`;
+  `eta* = 2/alpha_J`. Analytic Hessian vs finite differences: max error 3.4e-11.
+  PyTorch-autograd Hessian check: **TBD** (needs a machine with torch; test exists).
+- **eta\*, theory vs measurement:** `eta* = 2 / lambda_max(Hessian)` vs bisection on nonlinear GD:
+  max relative error 0.19% over 57 stable rows (sample-level Hessians). The population `eta*` is higher than
+  the N=1000 sample `eta*` (ratio 0.79 +/- 0.14). `eta*` values here (10 to 10^4) belong to this toy objective and are
+  **not** a learning rate for real networks (TBD in Phase 4).
+- **Curvature of plain entropy minimisation (K=5, population, Monte Carlo):** `alpha_L` is negative for sep <= 2
+  (-0.099, -0.035, -0.0010 at sep 1, 1.5, 2) and positive from sep 2.5 (+0.0086); sign change near sep 2.05 [observed].
+  This agrees with Phase 1, where sep 1 and 2 collapsed already at `delta = 0`.
+- **Threshold:** the exact 1-D reduced population flow gives `g_c` = 8.18, 15.88, 25.01 at sep 3, 4, 5, versus
+  Phase 1 simulated 7.61 +/- 0.50, 16.34 +/- 0.15, 25.85 +/- 0.34 (differences larger than one std: finite-sample, untested).
+- **Toy check of the fix** (3 seeds, bias-only, eta 2, 3000 steps): for sep 3 and 4, `lam` in {0.5, 1, 2} gave 0/3 collapses
+  at every initial bias up to 2 x margin, while `lam = 0` collapsed 3/3 from 1.2 x margin. [observed; toy only]
+- **Caveats:** finite-sample noise at large separation (sep 5: population curvature +0.0002 but sample curvature negative);
+  the 1-D reduction does not hold for 2 of 9 sample seeds; only K=5; no claim about deep networks yet.
+
 ### Not yet run
 
 | Experiment | Result |
 |---|---|
-| eta* (theory vs numerical) | TBD (Phase 2) |
 | CIFAR-10-C time-to-collapse (Source / TENT / TENT+marginal / RDumb) | TBD (Phases 3-4) |
 
 ## Limitations (to be expanded in Phase 7)

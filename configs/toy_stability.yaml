@@ -1,0 +1,29 @@
+# Phase 2: derived bias dynamics, balanced-point Hessian/Jacobian, eta* (toy model, bias-only).
+# Run:  python scripts/run_stability.py --config configs/toy_stability.yaml
+# Quick run: ... stability.sep_grid=[2.0,3.0] stability.lam_list=[0.0,1.0] population.n_xi=20000
+experiment:
+  name: toy_stability
+
+toy:
+  K: 5
+  d: 10
+  n_per_class: 200
+  sigma: 1.0
+  sep: 3.0              # unused here (sep_grid below); kept so shared tools see a complete [toy] section
+
+stability:
+  sep_grid: [1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0]
+  lam_list: [0.0, 0.5, 1.0, 2.0]    # weight of the -lam*H(p_bar) term (0 = plain TENT loss)
+  eta_check_factors: [0.5, 0.9, 1.1, 1.5]   # spectral radius of the GD map at factor * eta*
+  sim_steps: 3000                   # GD from b=0 (delta=0) to check the stability prediction
+  sim_eta_max: 2.0                  # sim step size = min(this, 0.5 * eta*)
+  collapse_tau: 0.1
+
+population:                         # Monte-Carlo evaluation of the exact population reduction
+  n_xi: 100000
+  mc_seeds: [0, 1]
+  g_max_rel: 1.5
+  n_scan: 31
+
+compare:                            # optional: Phase 1 thresholds to compare against (skipped if missing)
+  phase1_thresholds: results/toy_basin/489889f9/thresholds.csv

@@ -58,7 +58,35 @@ Round before grouping. Always look at the figure, not only the numbers.
 **What this phase does NOT show.** It shows *numerically* where the boundary is for
 one family of toy problems. It does not derive the threshold; that is Phase 2.
 
+## Phase 2
+
+**Gauge directions.** Adding the same constant to every bias changes nothing (softmax is shift invariant),
+so the Hessian always has a zero eigenvalue along the all-ones vector. That is not an instability. We analyse
+stability on the subspace orthogonal to it.
+
+**Symmetry does the work.** At the balanced point all classes are interchangeable, so the Hessian must look like
+`alpha * (I - 11^T/K)`: one number controls everything. That is why `eta* = 2/alpha` and why a 1-D flow for the
+gap `b_0 - b_others` is *exact* for the population.
+
+**Why `eta < 2/alpha`?** Plain GD on a quadratic with curvature `alpha` multiplies the error by `1 - eta*alpha`
+each step; its magnitude is below 1 only if `0 < eta*alpha < 2`.
+
+**Why check against the *nonlinear* GD?** Computing `eta*` from the Hessian and then "checking" it with the same
+Hessian proves nothing. We perturb the fixed point slightly and run real GD; that uses only the gradient.
+
+**Two bugs this phase, both worth remembering.**
+1. *Noise-floor measurement.* The measured growth factor was about 1.000000 for steps that should decay. The perturbation had
+   shrunk to the solver's noise level (1e-12) and stopped moving. Fix: stop when it falls below a floor far above
+   the noise, and compare to `1 - 1e-6`, never `1.0`. Before the fix three cases showed errors of 17-63%; after, 0.19% max.
+2. *Newton escaping.* When the balanced point is unstable, Newton from `b=0` jumped to a far-away flat (collapsed) stationary
+   point, where the Hessian is about 0 and looks "marginally stable". We now cap the step, require a small gradient and
+   `|gap| < 2`, and also log the curvature at exactly `b=0`.
+Also: a hand-checked table caught three wrong numbers in a draft of THEORY.md. Always recompute quoted numbers from the CSVs.
+
+**What this phase does not prove.** Bias-only, K=5, orthogonal means, Monte-Carlo evaluated constants. The threshold
+`g_c` and the sign change of `alpha_L` near margin 4.2 have no closed form here.
+
 ## Open questions to verify numerically (later phases, not claimed yet)
 
-- Is the collapse threshold a sharp boundary in initial bias? (Phase 1)
-- What is eta* and does the analytic value match the numerical one? (Phase 2)
+- Does the toy stability picture (negative curvature at low margin, `lam > lam_c` fixes it) show up in a real network? (Phases 3-5)
+- What is the right curvature / learning-rate scale for BatchNorm parameters in a real network? (Phase 4)

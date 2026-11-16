@@ -1,0 +1,17 @@
+# Phase 2 (toy only): does the -lam*H(p_bar) term remove the collapse basin? GD from the biased start.
+# Run:  python scripts/run_infomax_basin.py --config configs/toy_infomax_basin.yaml
+experiment:
+  name: toy_infomax_basin
+toy:
+  K: 5
+  d: 10
+  n_per_class: 200
+  sigma: 1.0
+  sep: 3.0
+check:
+  sep_grid: [3.0, 4.0]
+  lam_list: [0.0, 0.5, 1.0, 2.0]
+  delta_rel: [0.5, 0.9, 1.2, 1.5, 2.0]   # initial bias as a multiple of the margin sep^2/sigma^2
+  eta: 2.0
+  steps: 3000
+  collapse_tau: 0.1
