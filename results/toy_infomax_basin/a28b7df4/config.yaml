@@ -1,0 +1,45 @@
+check:
+  collapse_tau: 0.1
+  delta_rel:
+  - 0.5
+  - 0.9
+  - 1.2
+  - 1.5
+  - 2.0
+  eta: 2.0
+  lam_list:
+  - 0.0
+  - 0.5
+  - 1.0
+  - 2.0
+  sep_grid:
+  - 3.0
+  - 4.0
+  steps: 3000
+compute:
+  deterministic: true
+  device: auto
+experiment:
+  name: toy_infomax_basin
+  results_dir: results
+  seed: 0
+  seeds:
+  - 0
+  - 1
+  - 2
+metrics:
+  collapse_patience: 5
+  collapse_top_frac: 0.9
+  ema_decay: 0.9
+stream:
+  batch_size: 200
+  max_steps: null
+  num_corruptions: 15
+  num_cycles: 1
+  severity: 5
+toy:
+  K: 5
+  d: 10
+  n_per_class: 200
+  sep: 3.0
+  sigma: 1.0

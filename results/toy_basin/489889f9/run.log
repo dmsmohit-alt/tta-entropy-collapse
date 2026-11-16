@@ -1,0 +1,12 @@
+2026-11-15 17:11:39,713 | INFO | run dir: results/toy_basin/489889f9 | seeds: [0, 1, 2]
+2026-11-15 17:12:11,220 | INFO | sweep done: sep=1.0
+2026-11-15 17:12:44,433 | INFO | sweep done: sep=2.0
+2026-11-15 17:13:35,596 | INFO | sweep done: sep=3.0
+2026-11-15 17:14:05,333 | INFO | sweep done: sep=4.0
+2026-11-15 17:14:35,383 | INFO | sweep done: sep=5.0
+2026-11-15 17:14:51,676 | INFO | thresholds done: sep=1.0
+2026-11-15 17:15:07,296 | INFO | thresholds done: sep=2.0
+2026-11-15 17:16:51,314 | INFO | thresholds done: sep=3.0
+2026-11-15 17:17:21,294 | INFO | thresholds done: sep=4.0
+2026-11-15 17:17:51,477 | INFO | thresholds done: sep=5.0
+2026-11-15 17:17:52,823 | INFO | summary written to results/toy_basin/489889f9/summary.json

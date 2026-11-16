@@ -1,0 +1,52 @@
+compute:
+  deterministic: true
+  device: auto
+experiment:
+  name: toy_basin
+  results_dir: results
+  seed: 0
+  seeds:
+  - 0
+  - 1
+  - 2
+metrics:
+  collapse_patience: 5
+  collapse_top_frac: 0.9
+  ema_decay: 0.9
+stream:
+  batch_size: 200
+  max_steps: null
+  num_corruptions: 15
+  num_cycles: 1
+  severity: 5
+sweep:
+  adapt_modes:
+  - b
+  - Wb
+  delta_rel_max: 1.2
+  n_delta: 25
+  sep_grid:
+  - 1.0
+  - 2.0
+  - 3.0
+  - 4.0
+  - 5.0
+  thr_bisect_iters: 10
+  thr_n_grid: 13
+  trajectory_ratios:
+  - 0.0
+  - 0.5
+  - 0.9
+  - 1.1
+  - 1.5
+toy:
+  K: 5
+  collapse_tau: 0.1
+  d: 10
+  eta: 2.0
+  grad_tol: 1.0e-07
+  n_per_class: 200
+  record_every: 20
+  sep: 3.0
+  sigma: 1.0
+  steps: 2000

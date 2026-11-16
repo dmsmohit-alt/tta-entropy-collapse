@@ -1,0 +1,57 @@
+{
+  "eta_numeric_vs_sample_relerr_max": 0.001855468749999929,
+  "eta_numeric_vs_sample_relerr_n_nan": 0,
+  "eta_sample_vs_pop_ratio_mean_std": [
+    0.7906685191155255,
+    0.13984988349433006
+  ],
+  "frac_eig_min_at0_positive_by_sep_lam": {
+    "sep=1,lam=0": 0.0,
+    "sep=1,lam=0.5": 0.0,
+    "sep=1,lam=1": 1.0,
+    "sep=1,lam=2": 1.0,
+    "sep=1.5,lam=0": 0.0,
+    "sep=1.5,lam=0.5": 0.0,
+    "sep=1.5,lam=1": 1.0,
+    "sep=1.5,lam=2": 1.0,
+    "sep=2,lam=0": 0.0,
+    "sep=2,lam=0.5": 1.0,
+    "sep=2,lam=1": 1.0,
+    "sep=2,lam=2": 1.0,
+    "sep=2.5,lam=0": 1.0,
+    "sep=2.5,lam=0.5": 1.0,
+    "sep=2.5,lam=1": 1.0,
+    "sep=2.5,lam=2": 1.0,
+    "sep=3,lam=0": 1.0,
+    "sep=3,lam=0.5": 1.0,
+    "sep=3,lam=1": 1.0,
+    "sep=3,lam=2": 1.0,
+    "sep=4,lam=0": 1.0,
+    "sep=4,lam=0.5": 1.0,
+    "sep=4,lam=1": 1.0,
+    "sep=4,lam=2": 1.0,
+    "sep=5,lam=0": 0.0,
+    "sep=5,lam=0.5": 0.0,
+    "sep=5,lam=1": 0.0,
+    "sep=5,lam=2": 0.0
+  },
+  "hess_fd_maxerr_overall": 3.352115807153666e-11,
+  "hess_torch_maxerr_overall": null,
+  "max_grad_norm_at_b_star": 0.002476311732664848,
+  "mc_spread_g_c_lam0_max": 0.0386764962764099,
+  "n_near_balanced": 76,
+  "n_near_balanced_stable": 57,
+  "n_near_balanced_unstable": 19,
+  "n_no_nearby_stationary_point": 8,
+  "n_rows": 84,
+  "rho_map_median_by_factor": {
+    "0.5": 0.33519520889168775,
+    "0.9": 0.7999999999514129,
+    "1.1": 1.1999999999406161,
+    "1.5": 1.9999999999190212
+  },
+  "stability_prediction_vs_sim_from_zero": {
+    "agree": 84,
+    "n": 84
+  }
+}

@@ -1,0 +1,102 @@
+2026-11-15 17:46:20,857 | INFO | run dir results/toy_stability/5dd255d1 | K=5 seeds=[0, 1, 2]
+2026-11-15 17:47:00,392 | INFO | population done: sep=1.0
+2026-11-15 17:47:40,190 | INFO | population done: sep=1.5
+2026-11-15 17:48:20,154 | INFO | population done: sep=2.0
+2026-11-15 17:49:00,594 | INFO | population done: sep=2.5
+2026-11-15 17:49:40,730 | INFO | population done: sep=3.0
+2026-11-15 17:50:21,023 | INFO | population done: sep=4.0
+2026-11-15 17:51:00,783 | INFO | population done: sep=5.0
+2026-11-15 17:51:13,638 | INFO | sample stability done: sep=1.0 seed=0
+2026-11-15 17:51:26,915 | INFO | sample stability done: sep=1.0 seed=1
+2026-11-15 17:51:38,911 | INFO | sample stability done: sep=1.0 seed=2
+2026-11-15 17:51:44,645 | INFO | sample stability done: sep=1.5 seed=0
+2026-11-15 17:52:02,893 | INFO | sample stability done: sep=1.5 seed=1
+2026-11-15 17:52:18,949 | INFO | sample stability done: sep=1.5 seed=2
+2026-11-15 17:52:36,562 | INFO | sample stability done: sep=2.0 seed=0
+2026-11-15 17:52:48,518 | INFO | sample stability done: sep=2.0 seed=1
+2026-11-15 17:53:06,757 | INFO | sample stability done: sep=2.0 seed=2
+2026-11-15 17:53:27,870 | INFO | sample stability done: sep=2.5 seed=0
+2026-11-15 17:53:50,018 | INFO | sample stability done: sep=2.5 seed=1
+2026-11-15 17:54:08,725 | INFO | sample stability done: sep=2.5 seed=2
+2026-11-15 17:54:25,862 | INFO | sample stability done: sep=3.0 seed=0
+2026-11-15 17:54:44,666 | INFO | sample stability done: sep=3.0 seed=1
+2026-11-15 17:54:59,512 | INFO | sample stability done: sep=3.0 seed=2
+2026-11-15 17:55:20,801 | INFO | sample stability done: sep=4.0 seed=0
+2026-11-15 17:55:39,405 | INFO | sample stability done: sep=4.0 seed=1
+2026-11-15 17:55:57,542 | INFO | sample stability done: sep=4.0 seed=2
+2026-11-15 17:56:02,067 | INFO | sample stability done: sep=5.0 seed=0
+2026-11-15 17:56:07,318 | INFO | sample stability done: sep=5.0 seed=1
+2026-11-15 17:56:11,871 | INFO | sample stability done: sep=5.0 seed=2
+2026-11-15 17:56:12,217 | INFO | summary written
+2026-11-16 00:43:26,539 | INFO | run dir results/toy_stability/5dd255d1 | K=5 seeds=[0, 1, 2]
+2026-11-16 00:43:26,540 | INFO | reusing existing results/toy_stability/5dd255d1/population.csv (same config hash; delete it to recompute)
+2026-11-16 00:43:49,084 | INFO | sample stability done: sep=1.0 seed=0
+2026-11-16 00:44:10,356 | INFO | sample stability done: sep=1.0 seed=1
+2026-11-16 00:44:33,910 | INFO | sample stability done: sep=1.0 seed=2
+2026-11-16 00:44:56,535 | INFO | sample stability done: sep=1.5 seed=0
+2026-11-16 00:45:18,731 | INFO | sample stability done: sep=1.5 seed=1
+2026-11-16 00:45:38,758 | INFO | sample stability done: sep=1.5 seed=2
+2026-11-16 00:46:10,757 | INFO | sample stability done: sep=2.0 seed=0
+2026-11-16 00:46:41,535 | INFO | sample stability done: sep=2.0 seed=1
+2026-11-16 00:47:12,360 | INFO | sample stability done: sep=2.0 seed=2
+2026-11-16 00:47:47,375 | INFO | sample stability done: sep=2.5 seed=0
+2026-11-16 00:48:22,524 | INFO | sample stability done: sep=2.5 seed=1
+2026-11-16 00:48:56,596 | INFO | sample stability done: sep=2.5 seed=2
+2026-11-16 00:49:32,220 | INFO | sample stability done: sep=3.0 seed=0
+2026-11-16 00:50:02,557 | INFO | sample stability done: sep=3.0 seed=1
+2026-11-16 00:50:37,846 | INFO | sample stability done: sep=3.0 seed=2
+2026-11-16 00:51:13,463 | INFO | sample stability done: sep=4.0 seed=0
+2026-11-16 00:51:47,849 | INFO | sample stability done: sep=4.0 seed=1
+2026-11-16 00:52:22,602 | INFO | sample stability done: sep=4.0 seed=2
+2026-11-16 00:52:27,285 | INFO | sample stability done: sep=5.0 seed=0
+2026-11-16 00:52:41,338 | INFO | sample stability done: sep=5.0 seed=1
+2026-11-16 00:52:45,766 | INFO | sample stability done: sep=5.0 seed=2
+2026-11-16 00:52:46,155 | INFO | summary written
+2026-11-16 00:53:28,362 | INFO | run dir results/toy_stability/5dd255d1 | K=5 seeds=[0, 1, 2]
+2026-11-16 00:53:28,363 | INFO | reusing existing results/toy_stability/5dd255d1/population.csv (same config hash; delete it to recompute)
+2026-11-16 00:53:50,757 | INFO | sample stability done: sep=1.0 seed=0
+2026-11-16 00:54:11,691 | INFO | sample stability done: sep=1.0 seed=1
+2026-11-16 00:54:34,509 | INFO | sample stability done: sep=1.0 seed=2
+2026-11-16 00:54:57,149 | INFO | sample stability done: sep=1.5 seed=0
+2026-11-16 00:55:18,593 | INFO | sample stability done: sep=1.5 seed=1
+2026-11-16 00:55:38,412 | INFO | sample stability done: sep=1.5 seed=2
+2026-11-16 00:56:10,242 | INFO | sample stability done: sep=2.0 seed=0
+2026-11-16 00:56:40,890 | INFO | sample stability done: sep=2.0 seed=1
+2026-11-16 00:57:12,453 | INFO | sample stability done: sep=2.0 seed=2
+2026-11-16 00:57:47,873 | INFO | sample stability done: sep=2.5 seed=0
+2026-11-16 00:58:22,878 | INFO | sample stability done: sep=2.5 seed=1
+2026-11-16 00:58:59,366 | INFO | sample stability done: sep=2.5 seed=2
+2026-11-16 00:59:34,798 | INFO | sample stability done: sep=3.0 seed=0
+2026-11-16 01:00:05,402 | INFO | sample stability done: sep=3.0 seed=1
+2026-11-16 01:00:40,402 | INFO | sample stability done: sep=3.0 seed=2
+2026-11-16 01:01:15,278 | INFO | sample stability done: sep=4.0 seed=0
+2026-11-16 01:01:50,113 | INFO | sample stability done: sep=4.0 seed=1
+2026-11-16 01:02:26,262 | INFO | sample stability done: sep=4.0 seed=2
+2026-11-16 01:02:30,895 | INFO | sample stability done: sep=5.0 seed=0
+2026-11-16 01:02:44,715 | INFO | sample stability done: sep=5.0 seed=1
+2026-11-16 01:02:49,268 | INFO | sample stability done: sep=5.0 seed=2
+2026-11-16 01:02:49,645 | INFO | summary written
+2026-11-16 01:04:30,419 | INFO | run dir results/toy_stability/5dd255d1 | K=5 seeds=[0, 1, 2]
+2026-11-16 01:04:30,419 | INFO | reusing existing results/toy_stability/5dd255d1/population.csv (same config hash; delete it to recompute)
+2026-11-16 01:04:54,448 | INFO | sample stability done: sep=1.0 seed=0
+2026-11-16 01:05:16,336 | INFO | sample stability done: sep=1.0 seed=1
+2026-11-16 01:05:38,956 | INFO | sample stability done: sep=1.0 seed=2
+2026-11-16 01:06:01,642 | INFO | sample stability done: sep=1.5 seed=0
+2026-11-16 01:06:23,618 | INFO | sample stability done: sep=1.5 seed=1
+2026-11-16 01:06:44,312 | INFO | sample stability done: sep=1.5 seed=2
+2026-11-16 01:07:16,000 | INFO | sample stability done: sep=2.0 seed=0
+2026-11-16 01:07:46,619 | INFO | sample stability done: sep=2.0 seed=1
+2026-11-16 01:08:18,383 | INFO | sample stability done: sep=2.0 seed=2
+2026-11-16 01:08:56,083 | INFO | sample stability done: sep=2.5 seed=0
+2026-11-16 01:09:33,169 | INFO | sample stability done: sep=2.5 seed=1
+2026-11-16 01:10:10,371 | INFO | sample stability done: sep=2.5 seed=2
+2026-11-16 01:10:45,872 | INFO | sample stability done: sep=3.0 seed=0
+2026-11-16 01:11:17,332 | INFO | sample stability done: sep=3.0 seed=1
+2026-11-16 01:11:53,958 | INFO | sample stability done: sep=3.0 seed=2
+2026-11-16 01:12:30,651 | INFO | sample stability done: sep=4.0 seed=0
+2026-11-16 01:13:07,035 | INFO | sample stability done: sep=4.0 seed=1
+2026-11-16 01:13:43,970 | INFO | sample stability done: sep=4.0 seed=2
+2026-11-16 01:13:48,946 | INFO | sample stability done: sep=5.0 seed=0
+2026-11-16 01:13:55,752 | INFO | sample stability done: sep=5.0 seed=1
+2026-11-16 01:14:00,198 | INFO | sample stability done: sep=5.0 seed=2
+2026-11-16 01:14:00,546 | INFO | summary written

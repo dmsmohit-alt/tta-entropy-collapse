@@ -1,0 +1,58 @@
+compare:
+  phase1_thresholds: results/toy_basin/489889f9/thresholds.csv
+compute:
+  deterministic: true
+  device: auto
+experiment:
+  name: toy_stability
+  results_dir: results
+  seed: 0
+  seeds:
+  - 0
+  - 1
+  - 2
+metrics:
+  collapse_patience: 5
+  collapse_top_frac: 0.9
+  ema_decay: 0.9
+population:
+  g_max_rel: 1.5
+  mc_seeds:
+  - 0
+  - 1
+  n_scan: 31
+  n_xi: 100000
+stability:
+  collapse_tau: 0.1
+  eta_check_factors:
+  - 0.5
+  - 0.9
+  - 1.1
+  - 1.5
+  lam_list:
+  - 0.0
+  - 0.5
+  - 1.0
+  - 2.0
+  sep_grid:
+  - 1.0
+  - 1.5
+  - 2.0
+  - 2.5
+  - 3.0
+  - 4.0
+  - 5.0
+  sim_eta_max: 2.0
+  sim_steps: 3000
+stream:
+  batch_size: 200
+  max_steps: null
+  num_corruptions: 15
+  num_cycles: 1
+  severity: 5
+toy:
+  K: 5
+  d: 10
+  n_per_class: 200
+  sep: 3.0
+  sigma: 1.0
