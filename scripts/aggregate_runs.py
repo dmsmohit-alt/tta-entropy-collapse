@@ -27,7 +27,8 @@ def main() -> None:
         groups.setdefault((f.parent.parent.name, f.parent.name.rsplit("_seed", 1)[0]), []).append(s)
     rows = []
     for (method, h), runs in groups.items():
-        row: dict = {"method": method, "config_hash": h, "n_runs": len(runs), "seeds": sorted(r["seed"] for r in runs)}
+        row: dict = {"method": method, "layout": runs[0].get("input_layout", "as_is(old)"), "config_hash": h, "n_runs": len(runs),
+                     "seeds": sorted(r["seed"] for r in runs)}
         for k in KEYS:
             v = np.array([r[k] for r in runs if r.get(k) is not None], dtype=float)
             row[f"{k}_mean"] = float(v.mean()) if len(v) else np.nan

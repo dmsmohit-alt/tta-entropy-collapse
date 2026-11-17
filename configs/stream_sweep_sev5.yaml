@@ -1,0 +1,34 @@
+# Phase 4 SWEEP on the reported stream (severity 5). Reported IN FULL (every lam, every T), not only the best:
+# this is a sensitivity analysis, not a tuning step. Same experiment dir as Phase 3/4 primary runs.
+# Cost: 6 methods x 3 seeds x ~22 min (~6.6 h). Run on Colab T4 or restrict seeds: experiment.seeds=[0]
+# Run:  python scripts/run_stream.py --config configs/stream_sweep_sev5.yaml
+experiment:
+  name: stream_tent
+  seeds: [0, 1, 2]
+  skip_existing: true
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 15
+  severity: 5
+  num_cycles: 10
+  shuffle: true
+  max_steps: null
+
+methods: [tent_im_lam0p1, tent_im_lam0p5, tent_im_lam2, rdumb_T250, rdumb_T500, rdumb_T2000]
+tta:
+  tent_im_lam0p1: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.1, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1}
+  tent_im_lam0p5: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.5, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1}
+  tent_im_lam2: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 2, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1}
+  rdumb_T250: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.0, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1, reset_every: 250}
+  rdumb_T500: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.0, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1, reset_every: 500}
+  rdumb_T2000: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.0, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1, reset_every: 2000}

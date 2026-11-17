@@ -18,7 +18,7 @@ from src.tta.base import TTAMethod
 
 
 def make_optimizer(params: list[Tensor], name: str, lr: float, betas: tuple[float, float], weight_decay: float,
-                   momentum: float = 0.9) -> torch.optim.Optimizer:
+                   momentum: float = 0.0) -> torch.optim.Optimizer:
     if name == "adam":
         return torch.optim.Adam(params, lr=lr, betas=betas, weight_decay=weight_decay)
     if name == "sgd":
@@ -37,11 +37,13 @@ class Tent(TTAMethod):
         weight_decay: float = 0.0,
         steps: int = 1,
         optimizer: str = "adam",
+        momentum: float = 0.0,
         loss_fn: Callable[[Tensor], Tensor] | None = None,
     ) -> None:
         super().__init__(configure_model_for_tta(model))
         params, self.param_names = collect_bn_params(self.model)
-        self.optimizer = make_optimizer(params, optimizer, lr, tuple(betas), weight_decay)
+        # momentum only matters for sgd; 0.0 = plain gradient descent, the case the eta* = 2/lambda_max theory describes
+        self.optimizer = make_optimizer(params, optimizer, lr, tuple(betas), weight_decay, momentum)
         self.loss_fn = loss_fn or mean_entropy
         self.steps = steps
         # snapshot of the initial state, for reset()

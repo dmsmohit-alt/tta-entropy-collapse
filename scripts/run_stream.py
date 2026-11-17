@@ -23,6 +23,7 @@ sys.path.insert(0, str(REPO))
 import numpy as np
 import torch
 
+from src.data.tensors import to_tensor
 from src.data.stream import iter_stream, spec_from_cfg, steps_per_cycle, total_steps
 from src.metrics.collapse import CollapseDetector, EmaMarginal, batch_metrics
 from src.models.loader import load_source_model
@@ -45,11 +46,6 @@ def git_commit() -> str | None:
         return None
 
 
-def to_tensor(x_uint8: np.ndarray, device: torch.device) -> torch.Tensor:
-    """uint8 NHWC numpy -> float32 NCHW tensor in [0, 1] on `device`."""
-    return torch.from_numpy(x_uint8).to(device).permute(0, 3, 1, 2).float().div_(255.0)
-
-
 def run_one(cfg: dict, method: str, seed: int, base_model: torch.nn.Module, model_info: dict,
             device: torch.device) -> dict:
     run_cfg = {k: cfg[k] for k in ("data", "stream", "model", "metrics", "compute") if k in cfg}
@@ -69,6 +65,7 @@ def run_one(cfg: dict, method: str, seed: int, base_model: torch.nn.Module, mode
     spec = spec_from_cfg(cfg, seed)
     n_steps = total_steps(spec)
     mcfg = cfg["metrics"]
+    layout = cfg["compute"].get("input_layout", "as_is")
     ema = EmaMarginal(float(mcfg["ema_decay"]))
     det = CollapseDetector(float(mcfg["collapse_top_frac"]), int(mcfg["collapse_patience"]))
     err_sum: dict[int, float] = {}
@@ -80,9 +77,11 @@ def run_one(cfg: dict, method: str, seed: int, base_model: torch.nn.Module, mode
     log.info("%s seed=%d | %d steps (%d per cycle) | trainable params %d | device %s",
              method, seed, n_steps, steps_per_cycle(spec), tta.n_adapted_params, device)
     t0 = time.time()
+    step_times: list[float] = []
     with RunLogger(run_dir) as rl:
+        t_prev = time.perf_counter()
         for batch in iter_stream(spec):
-            logits = tta(to_tensor(batch.x, device))
+            logits = tta(to_tensor(batch.x, device, layout))
             lg = logits.float().cpu().numpy()
             if not np.isfinite(lg).all():                 # numerical blow-up: record and stop, do not hide it
                 diverged_step = batch.step
@@ -91,8 +90,12 @@ def run_one(cfg: dict, method: str, seed: int, base_model: torch.nn.Module, mode
             m, pbar = batch_metrics(lg, batch.y)
             h_ema = ema.update(pbar)
             det.update(batch.step, m["top_frac"])
+            now = time.perf_counter()                     # .cpu() above already synchronised the GPU
+            step_times.append(now - t_prev)               # data fetch + transfer + forward/update + metrics
+            t_prev = now
             rl.log_step(batch.step, {"cycle": batch.cycle, "corruption": batch.corruption, **m,
-                                     "H_bar_ema": h_ema, "collapsed_flag": int(det.collapsed)})
+                                     "H_bar_ema": h_ema, "collapsed_flag": int(det.collapsed),
+                                     "step_seconds": step_times[-1]})
             n = len(batch.y)
             err_sum[batch.cycle] = err_sum.get(batch.cycle, 0.0) + m["online_err"] * n
             cnt[batch.cycle] = cnt.get(batch.cycle, 0) + n
@@ -116,7 +119,12 @@ def run_one(cfg: dict, method: str, seed: int, base_model: torch.nn.Module, mode
             "final_H_bar_ema": last_h_ema, "final_H_bar_batch": last_h_batch,
             "collapsed": det.collapsed, "time_to_collapse_start": det.start_step, "time_to_collapse_detect": det.detect_step,
             "collapse_rule": {"top_frac_gt": mcfg["collapse_top_frac"], "consecutive_batches": mcfg["collapse_patience"]},
+            "input_layout": layout, "deterministic": bool(cfg["compute"]["deterministic"]),
+            "tta_cfg": run_cfg["tta"], "n_resets": getattr(tta, "n_resets", 0),
             "n_adapted_params": tta.n_adapted_params, "seconds": seconds,
+            "step_seconds_first5_mean": float(np.mean(step_times[:5])) if step_times else None,
+            "step_seconds_median": float(np.median(step_times)) if step_times else None,
+            "step_seconds_mean_after_first5": float(np.mean(step_times[5:])) if len(step_times) > 5 else None,
             "peak_cuda_mem_mb": (torch.cuda.max_memory_allocated() / 2**20) if device.type == "cuda" else None,
             "model": model_info, "torch": torch.__version__, "cuda": torch.version.cuda, "git_commit": git_commit(),
         }

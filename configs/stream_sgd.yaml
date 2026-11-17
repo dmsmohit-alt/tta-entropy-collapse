@@ -1,0 +1,33 @@
+# Phase 4 SGD arm (plain gradient descent: momentum 0, the case the eta* = 2/lambda_max theory describes).
+# lr is DELIBERATELY null: measure the curvature first and pass lr explicitly:
+#   python scripts/measure_curvature.py --config configs/stream_select_sev3.yaml --lams 0 1 --n-segments 5
+#   eta = c * min_over_segments(2/lambda_max), c = 0.5 (our choice)  -> take it from the SEVERITY-3 measurement
+#   python scripts/run_stream.py --config configs/stream_sgd.yaml tta.tent_sgd.lr=<eta> tta.tent_im_sgd_lam1.lr=<eta>
+# For lam=0 lambda_max may be tiny or the curvature negative (toy theory: plain entropy has negative curvature at low
+# margin); then eta* is not defined (nan in the CSV) and the lam=0 arm is reported with the lam=1 value of eta.
+experiment:
+  name: stream_tent
+  seeds: [0, 1, 2]
+  skip_existing: true
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 15
+  severity: 5
+  num_cycles: 10
+  shuffle: true
+  max_steps: null
+
+methods: [tent_sgd, tent_im_sgd_lam1]
+tta:
+  tent_sgd: {kind: tent, optimizer: sgd, lr: null, lam: 0.0, momentum: 0.0, weight_decay: 0.0, steps: 1}
+  tent_im_sgd_lam1: {kind: tent, optimizer: sgd, lr: null, lam: 1.0, momentum: 0.0, weight_decay: 0.0, steps: 1}

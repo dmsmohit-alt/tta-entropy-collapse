@@ -9,6 +9,8 @@ experiment:
 compute:
   device: auto            # auto | cpu | cuda. Edit for your hardware (Colab/Kaggle T4 or CPU laptop)
   deterministic: true     # slower but reproducible (cudnn deterministic)
+  input_layout: nchw      # nchw (contiguous; matches how the source model was trained; ~5-6x faster for batch-stat BN on the author's GPU)
+                          # | as_is (channels_last strides from permute). TENT results are layout-SENSITIVE: see README / check_layout_equivalence.py
 
 stream:                   # used from Phase 3 on; all sizes configurable for small machines
   batch_size: 200

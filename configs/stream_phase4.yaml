@@ -1,0 +1,32 @@
+# Phase 4 PRIMARY methods on the reported stream (severity 5, 10 cycles, seeds 0-2).
+# Same experiment.name as Phase 3 on purpose: results/stream_tent/<method>/... then holds source, bn_adapt, tent,
+# tent_im_lam1 and rdumb_T1000 side by side. All methods see the IDENTICAL batches for a given seed.
+# lam=1 and T=1000 are A PRIORI choices (not tuned on this stream). T=1000 is the RDumb paper's value for ImageNet
+# (batch 64); on CIFAR-10-C here (batch 200, 750 steps per cycle) it is only a starting point: see the sweep configs.
+# Run:  python scripts/run_stream.py --config configs/stream_phase4.yaml     (~22 min per run on RTX 2050)
+experiment:
+  name: stream_tent
+  seeds: [0, 1, 2]
+  skip_existing: true
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 15
+  severity: 5
+  num_cycles: 10
+  shuffle: true
+  max_steps: null
+
+methods: [tent_im_lam1, rdumb_T1000]
+tta:
+  tent_im_lam1: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 1.0, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1}
+  rdumb_T1000: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.0, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1, reset_every: 1000}

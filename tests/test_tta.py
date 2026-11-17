@@ -134,3 +134,67 @@ def test_resnet18_cifar_shapes_params_and_bn_selection():
     assert len(params) == 2 * sum(isinstance(x_, nn.BatchNorm2d) for x_ in m.modules())
     assert count_trainable(m) == sum(p.numel() for p in params) and count_trainable(m) < 30_000
     assert np.isfinite(m(x).detach().numpy()).all()
+
+
+# ---------------- Phase 4: TENT + marginal entropy, periodic reset, factory ----------------
+from src.tta import PeriodicReset  # noqa: E402
+
+
+def _run(method, xs):
+    return [method(x) for x in xs]
+
+
+def test_lam_zero_is_exactly_phase3_tent():
+    xs = [_batch(s) for s in range(1, 4)]
+    a = Tent(copy.deepcopy(_tiny()), lr=1e-2)
+    b = build_method("tent", copy.deepcopy(_tiny()), {"lr": 1e-2, "lam": 0.0})
+    for la, lb in zip(_run(a, xs), _run(b, xs)):
+        assert torch.equal(la, lb)
+
+
+def test_marginal_term_changes_the_update():
+    xs = [_batch(s) for s in range(1, 4)]
+    a = build_method("tent", copy.deepcopy(_tiny()), {"lr": 1e-2, "lam": 0.0})
+    b = build_method("tent", copy.deepcopy(_tiny()), {"lr": 1e-2, "lam": 1.0})
+    _run(a, xs), _run(b, xs)
+    pa, _ = collect_bn_params(a.model)
+    pb, _ = collect_bn_params(b.model)
+    assert any(not torch.allclose(x, y) for x, y in zip(pa, pb))
+
+
+def test_sgd_requires_explicit_lr():
+    with pytest.raises(ValueError, match="lr is not set"):
+        build_method("tent_sgd", _tiny(), {"kind": "tent", "optimizer": "sgd", "lr": None})
+    m = build_method("tent_sgd", _tiny(), {"kind": "tent", "optimizer": "sgd", "lr": 0.01, "momentum": 0.0})
+    assert isinstance(m.optimizer, torch.optim.SGD) and m.optimizer.defaults["momentum"] == 0.0
+
+
+def test_periodic_reset_restores_source_and_counts():
+    xs = [_batch(s) for s in range(1, 8)]
+    base = _tiny()
+    m = PeriodicReset(Tent(copy.deepcopy(base), lr=1e-1), period=3)
+    fresh = Tent(copy.deepcopy(base), lr=1e-1)
+    p0 = [p.detach().clone() for p in collect_bn_params(m.model)[0]]
+    outs = _run(m, xs[:3])                                   # batches 0,1,2: adapting, no reset yet
+    assert m.n_resets == 0
+    assert any(not torch.equal(p0_, p) for p0_, p in zip(p0, collect_bn_params(m.model)[0]))
+    out3 = m(xs[3])                                          # batch 3: reset happens BEFORE it
+    assert m.n_resets == 1
+    assert torch.allclose(out3, fresh(xs[3]), atol=1e-6)     # predicted by source weights, like a fresh method
+    _run(m, xs[4:7])                                         # batches 4,5,6 -> reset again before batch 6
+    assert m.n_resets == 2
+    assert len(outs) == 3
+
+
+def test_periodic_reset_also_resets_optimizer_state():
+    m = PeriodicReset(Tent(_tiny(), lr=1e-1), period=2)
+    _run(m, [_batch(1), _batch(2)])
+    assert len(m.inner.optimizer.state) > 0                  # Adam moments exist
+    m(_batch(3))                                             # reset before this batch, then 1 fresh step
+    steps = [int(s["step"]) for s in m.inner.optimizer.state.values()]
+    assert steps and all(s == 1 for s in steps)              # moments restarted, not continued from step 3
+
+
+def test_reset_period_validation():
+    with pytest.raises(ValueError):
+        PeriodicReset(Tent(_tiny()), period=0)

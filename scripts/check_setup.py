@@ -20,6 +20,7 @@ import numpy as np
 import torch
 
 from src.data.cifar10c import load_corruption
+from src.data.tensors import to_tensor
 from src.models.loader import load_source_model
 from src.utils.config import load_config
 
@@ -28,10 +29,11 @@ SEVERITIES = (1, 3, 5)
 
 
 @torch.no_grad()
-def source_error(model: torch.nn.Module, x: np.ndarray, y: np.ndarray, device: torch.device, bs: int = 500) -> float:
+def source_error(model: torch.nn.Module, x: np.ndarray, y: np.ndarray, device: torch.device, layout: str = "as_is",
+                 bs: int = 500) -> float:
     wrong = 0
     for i in range(0, len(x), bs):
-        xb = torch.from_numpy(x[i:i + bs]).to(device).permute(0, 3, 1, 2).float().div_(255.0)
+        xb = to_tensor(x[i:i + bs], device, layout)
         wrong += int((model(xb).argmax(1).cpu().numpy() != y[i:i + bs]).sum())
     return wrong / len(x)
 
@@ -51,7 +53,7 @@ def main() -> None:
         res[c] = {}
         for s in SEVERITIES:
             x, y = load_corruption(cfg["data"]["root"], c, s)
-            res[c][s] = source_error(model, x, y, dev)
+            res[c][s] = source_error(model, x, y, dev, cfg["compute"].get("input_layout", "as_is"))
     print(f"{'corruption':<16}" + "".join(f"sev{s:<7}" for s in SEVERITIES))
     for c, d in res.items():
         print(f"{c:<16}" + "".join(f"{d[s]:<10.4f}" for s in SEVERITIES))

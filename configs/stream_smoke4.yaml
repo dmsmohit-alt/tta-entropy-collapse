@@ -1,0 +1,27 @@
+# 20-step plumbing run for Phase 4 methods; reset_every=10 so exactly one reset happens (summary n_resets == 1). NOT a result.
+experiment:
+  name: stream_smoke4
+  seeds: [0]
+  skip_existing: false
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 2
+  severity: 5
+  num_cycles: 1
+  shuffle: true
+  max_steps: 20
+
+methods: [tent_im_lam1, rdumb_T10]
+tta:
+  tent_im_lam1: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 1.0, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1}
+  rdumb_T10: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.0, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1, reset_every: 10}

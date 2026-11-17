@@ -3,7 +3,7 @@
 A dynamical analysis of test-time entropy minimisation (TENT) and a stable
 marginal-entropy correction for continual shift.
 
-**Status: Phases 0-2 done (scaffold, toy model, theory/stability analysis). Phase 3 (real-network pipeline) code is written; its experiments have NOT been run yet.**
+**Status: Phases 0-3 done (scaffold, toy model, theory/stability, real-network baselines on CIFAR-10-C). Phase 4 (TENT + marginal entropy, RDumb-style reset, SGD arm) code is written; its experiments have NOT been run yet.**
 Every number below comes from a saved run (config + CSV in `results/`); anything else is `TBD`.
 
 ## Setup
@@ -98,9 +98,10 @@ Runs: `toy_stability/5dd255d1` (84 rows = 3 data seeds x 7 separations x 4 lambd
 - **Caveats:** finite-sample noise at large separation (sep 5: population curvature +0.0002 but sample curvature negative);
   the 1-D reduction does not hold for 2 of 9 sample seeds; only K=5; no claim about deep networks yet.
 
-### Phase 3: real-network baseline (Source / BN-adapt / TENT on CIFAR-10-C) - code only, no results yet
+### Phase 3: real-network baseline (Source / BN-adapt / TENT on CIFAR-10-C)
 
-Everything below is `TBD` until you run it (the author's sandbox had no GPU, no torch and no internet).
+The stream runs were executed on the user's machine (RTX 2050); the author's sandbox has no GPU/torch/internet. The table below
+is copied from the user's `aggregate_runs.py` output (`results/stream_tent/aggregate.csv`, which the author has not opened).
 
 ```bash
 pip install -r requirements.txt                        # torch with CUDA already installed; adds torchvision
@@ -120,17 +121,66 @@ first batch of the first such streak (`time_to_collapse_start`) and the batch wh
 
 | Experiment | Result |
 |---|---|
-| Source / BN-adapt / TENT error on the 10-cycle stream (3 seeds) | TBD |
-| TENT time-to-collapse (3 seeds) | TBD (collapse is not guaranteed in 10 cycles; if absent, run `stream.num_cycles=20+` or raise lr, and report what is seen) |
+| Setting for all rows | ResNet-18 (own checkpoint), CIFAR-10-C severity 5, 15 corruptions x 10 cycles, batch 200, 7500 steps, `nchw` layout, seeds 0,1,2, mean +/- sample std |
+| Source overall error | 0.4473 +/- 0.0000 (collapsed 0/3) |
+| BN-adapt overall error | 0.2256 +/- 0.0001 (collapsed 0/3, max top-class fraction 0.195) |
+| TENT overall error | 0.6895 +/- 0.0724; last-cycle error 0.8592 +/- 0.0360 (accuracy 14.1%) |
+| TENT collapse (top_frac > 0.9 for 5 batches) | 3/3 seeds; start step 4584 +/- 1455; final H(p_bar) EMA 0.21 +/- 0.21; 0 diverged |
+
+**Finding to confirm (input memory layout).** `permute(0,3,1,2)` of an NHWC array gives a channels_last-strided tensor, which
+makes the whole network run in NHWC. On the author's RTX 2050 this made batch-statistics BatchNorm (BNAdapt, TENT) several times
+slower than contiguous NCHW input (see `results/bench_bn_layout/model.csv`). The default is now `compute.input_layout: nchw`
+(also how the source model was trained). Layout changes floating-point rounding only, and:
+- Source and BNAdapt: practically unchanged (a handful of flipped predictions out of 150,000 on one cycle).
+- **TENT is layout-sensitive:** on one cycle (750 steps, one seed, identical batches) the two layouts gave visibly different error and
+  different adapted BN parameters. Magnitude: **TBD** (re-run `check_layout_equivalence.py --steps 750 --control --segments`; it saves
+  `results/check_layout_equivalence/*.json`). We do not know which layout is "more correct"; neither is ground truth.
+  Consequence: single-run differences between TENT variants of a size comparable to this effect are not trustworthy; compare
+  methods with >= 3 seeds, in ONE fixed layout, and report layout sensitivity as a limitation.
+  Possible explanation, untested: entropy-minimisation dynamics amplify tiny perturbations (cf. the unstable balanced point in THEORY.md).
+- Layout study to run: TENT, 1 cycle, 3 seeds, both layouts (commands in LEARNING_NOTES.md). Results: **TBD**.
 
 Notes: the stream order depends on the seed only, so all methods see identical batches. The source model is a single
 trained checkpoint, so seed std reflects stream order, not source-training variance (a limitation).
 
-### Not yet run
+Caveats for the Phase 3 numbers: collapse is defined by our own rule (assumption); one source checkpoint, so std is stream-order
+only; TENT is layout-sensitive (above), and the layout study is still pending (**TBD**); the number of passing tests on the user's
+machine has not been reported to the author (**TBD**).
 
-| Experiment | Result |
+### Phase 4: TENT + marginal entropy, RDumb-style reset, SGD arm - code only, NO results yet
+
+Methods (all via `tta.<name>` in the configs; `kind: tent` with options):
+- `lam > 0`: loss = E[H(p)] - lam * H(p_bar) on the batch ("TENT + marginal entropy", SHOT-style information maximisation). `lam = 0` is bit-identical to Phase 3's TENT (test).
+- `reset_every: T`: RDumb-style baseline = reset the BN parameters *and the Adam state* every T steps, before processing batch t (t % T == 0, t > 0).
+  Verified from the RDumb paper page (arXiv 2306.05401): fixed period T = 1000 steps, resets to the pre-trained weights, ETA-style loss, SGD lr 2.5e-4, batch 64, ImageNet-scale;
+  it gives **no CIFAR-10-C settings**, so ours is "RDumb-style", not a reproduction.
+- SGD arm: plain gradient descent (momentum 0) with `eta = c * 2/lambda_max`, lambda_max measured by `scripts/measure_curvature.py`. The theory's eta* = 2/lambda is for GD, not Adam, so the Adam main comparison is only *qualitatively* linked to it.
+
+Decisions (user-approved): lam = 1 and T = 1000 are a-priori primaries; sweeps lam in {0.1, 0.5, 1, 2} and T in {250, 500, 1000, 2000} are reported in full;
+selection (if any) is made on a severity-3 stream with a different seed (100), with a pre-registered rule written in `configs/stream_select_sev3.yaml`; Adam lr 1e-3 for the main comparison.
+
+```bash
+pytest -q tests/test_tta.py tests/test_curvature.py                         # new torch tests (NOT run by the author)
+python scripts/run_stream.py --config configs/stream_smoke4.yaml            # 20 steps; rdumb_T10 summary must show n_resets = 1
+python scripts/run_stream.py --config configs/stream_phase4.yaml            # tent_im_lam1, rdumb_T1000 x 3 seeds (~2.2 h on RTX 2050)
+python scripts/run_stream.py --config configs/stream_select_sev3.yaml       # selection stream (~3.3 h; subset allowed)
+python scripts/measure_curvature.py --config configs/stream_select_sev3.yaml --lams 0 1 --n-segments 5
+python scripts/run_stream.py --config configs/stream_sgd.yaml tta.tent_sgd.lr=<eta> tta.tent_im_sgd_lam1.lr=<eta>
+python scripts/run_stream.py --config configs/stream_sweep_sev5.yaml        # full sweep (~6.6 h; use Colab or experiment.seeds=[0])
+python scripts/aggregate_runs.py --exp-dir results/stream_tent
+```
+
+| Experiment (severity 5, 3 seeds unless noted) | Result |
 |---|---|
-| CIFAR-10-C time-to-collapse (Source / TENT / TENT+marginal / RDumb) | TBD (Phases 3-4) |
+| TENT + marginal entropy (lam = 1): error, collapse | TBD |
+| RDumb-style (T = 1000): error, collapse | TBD |
+| lam sweep / T sweep | TBD |
+| Severity-3 selection | TBD |
+| Measured lambda_max / eta*_GD of the BN-parameter Hessian (source weights) | TBD |
+| SGD arm (eta < eta*) | TBD |
+
+Limitations of the curvature estimate: one batch per segment, at the source weights only, power iteration (see `--n-iter`, `converged_*` columns); the Hessian along the adapted trajectory may differ.
+The batch-marginal term assumes roughly class-balanced batches; on a class-imbalanced stream it may push the wrong way (ablation planned in Phase 5).
 
 ## Limitations (to be expanded in Phase 7)
 

@@ -1,0 +1,41 @@
+# Phase 4 SELECTION stream: severity 3 (NOT the reported severity 5), seed 100 (NOT a reported seed 0-2).
+# PRE-REGISTERED SELECTION RULE (written before any severity-3 run, do not edit after seeing results):
+#   For the lam sweep: keep lam=1 unless another lam has overall_err lower by more than 0.01 (absolute) on this stream
+#   AND collapsed=False. Same rule for the reset period T relative to T=1000. One seed => this is a coarse choice.
+#   If a different lam / T is selected, it is ADDED as an extra method on severity 5; lam=1 / T=1000 stay in the tables.
+# Cost: 9 methods x ~22 min on RTX 2050 (~3.3 h). Subset with e.g. methods=[tent,tent_im_lam1,rdumb_T1000] (list override).
+# Run:  python scripts/run_stream.py --config configs/stream_select_sev3.yaml
+#       python scripts/aggregate_runs.py --exp-dir results/select_sev3
+experiment:
+  name: select_sev3
+  seeds: [100]
+  skip_existing: true
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 15
+  severity: 3
+  num_cycles: 10
+  shuffle: true
+  max_steps: null
+
+methods: [tent, tent_im_lam0p1, tent_im_lam0p5, tent_im_lam1, tent_im_lam2, rdumb_T250, rdumb_T500, rdumb_T1000, rdumb_T2000]
+tta:
+  tent: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.0, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1}
+  tent_im_lam0p1: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.1, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1}
+  tent_im_lam0p5: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.5, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1}
+  tent_im_lam1: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 1, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1}
+  tent_im_lam2: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 2, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1}
+  rdumb_T250: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.0, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1, reset_every: 250}
+  rdumb_T500: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.0, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1, reset_every: 500}
+  rdumb_T1000: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.0, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1, reset_every: 1000}
+  rdumb_T2000: {kind: tent, optimizer: adam, lr: 1.0e-3, lam: 0.0, betas: [0.9, 0.999], weight_decay: 0.0, steps: 1, reset_every: 2000}
