@@ -138,14 +138,20 @@ slower than contiguous NCHW input (see `results/bench_bn_layout/model.csv`). The
   Consequence: single-run differences between TENT variants of a size comparable to this effect are not trustworthy; compare
   methods with >= 3 seeds, in ONE fixed layout, and report layout sensitivity as a limitation.
   Possible explanation, untested: entropy-minimisation dynamics amplify tiny perturbations (cf. the unstable balanced point in THEORY.md).
-- Layout study to run: TENT, 1 cycle, 3 seeds, both layouts (commands in LEARNING_NOTES.md). Results: **TBD**.
+- User-reported layout results (console/CSV not seen by the author; TENT, seed 0, 750 steps, identical batches): as_is vs nchw max|dlogit| 27.7,
+  11321/150000 prediction diffs, error 0.23693 vs 0.26089, max|dparam| 9.155e-2. **Control** (nchw vs nchw rerun): 0 prediction diffs, identical error
+  (so run-to-run nondeterminism is not the cause; the layout rounding difference is). Per-segment error (as_is / nchw): segments 0-5 differ by <= 0.0014;
+  seg 6 0.1768/0.1959; seg 9 0.2252/0.2706; seg 14 0.2911/0.3604. I.e. trajectories stay together for ~6 segments, then drift apart (one seed only).
+- Layout study (TENT, 1 cycle, 3 seeds; user-reported): as_is 0.2579 +/- 0.0452 (848 s per run), nchw 0.2712 +/- 0.0312 (150 s per run); n_collapsed 0 in both.
+  The difference of means (0.013) is well inside the seed std, so with n = 3 a layout effect is **not detectable** here; that is absence of evidence, not
+  evidence of absence. The correct comparison is paired per seed (`scripts/compare_runs_paired.py`): **TBD**.
+- Does the collapse timing depend on layout? **Unknown.** TENT collapse start varies by +/- 1455 steps across seeds (nchw), so one as_is run cannot resolve a timing difference.
 
 Notes: the stream order depends on the seed only, so all methods see identical batches. The source model is a single
 trained checkpoint, so seed std reflects stream order, not source-training variance (a limitation).
 
 Caveats for the Phase 3 numbers: collapse is defined by our own rule (assumption); one source checkpoint, so std is stream-order
-only; TENT is layout-sensitive (above), and the layout study is still pending (**TBD**); the number of passing tests on the user's
-machine has not been reported to the author (**TBD**).
+only; TENT is layout-sensitive (above), and the layout study is still pending (**TBD**); the user reports `pytest -q`: 81 passed, 0 skipped (2026-11-18, two runs, both 81; not seen by the author).
 
 ### Phase 4: TENT + marginal entropy, RDumb-style reset, SGD arm - code only, NO results yet
 
@@ -172,12 +178,14 @@ python scripts/aggregate_runs.py --exp-dir results/stream_tent
 
 | Experiment (severity 5, 3 seeds unless noted) | Result |
 |---|---|
-| TENT + marginal entropy (lam = 1): error, collapse | TBD |
-| RDumb-style (T = 1000): error, collapse | TBD |
+| TENT + marginal entropy (lam = 1, a priori), overall error / collapse | 0.2632 (collapsed 0/3) [from the user's aggregate output; std, last-cycle error, top_frac not yet seen by the author: TBD] |
+| RDumb-style (T = 1000, a priori), overall error / collapse | 0.2862 (collapsed 0/3) [same source, same TBDs] |
+| Reference rows (Phase 3, same stream) | Source 0.4473, BN-adapt 0.2256, TENT 0.6895 (collapse 3/3) |
+| Observation | Both collapse-preventing variants are *worse* than BN-adapt alone (0.2256) in overall error; whether this is a slow per-cycle drift, a cost of the entropy objective itself, or lam/T not tuned is **unknown** (needs err_by_cycle and the sweeps) |
 | lam sweep / T sweep | TBD |
 | Severity-3 selection | TBD |
-| Measured lambda_max / eta*_GD of the BN-parameter Hessian (source weights) | TBD |
-| SGD arm (eta < eta*) | TBD |
+| Measured lambda_max / eta*_GD of the BN-parameter Hessian (source weights) | Power-iteration numbers (user's run, 5 segments, severity 3) are **superseded**: that estimator is unreliable when |lambda_min| >> lambda_max. Lanczos run (user-reported, 15 segments, severity 3, batch 200, source weights; `results/curvature/.../curvature.csv` not seen by the author): lambda_max 2.5 to 7.0, lambda_min -6.4 to -17.2, nearly identical for lam=0 and lam=1; min eta*_GD = 0.2873 (lam=0), 0.2857 (lam=1), both from the contrast segment; impulse noise lambda_max 3.80 / 4.01 (so the earlier 0.027 -> 3.88 jump was an estimator artifact). Contrast cross-check with larger ncv / other start vector: TBD |
+| SGD arm (eta < eta*), eta = 0.5 x 0.2857 = 0.1429 for both arms (plain SGD, momentum 0) | TBD (runs pending) |
 
 Limitations of the curvature estimate: one batch per segment, at the source weights only, power iteration (see `--n-iter`, `converged_*` columns); the Hessian along the adapted trajectory may differ.
 The batch-marginal term assumes roughly class-balanced batches; on a class-imbalanced stream it may push the wrong way (ablation planned in Phase 5).

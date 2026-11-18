@@ -162,6 +162,12 @@ A different severity and seed keeps the report stream untouched; writing the rul
 eigenvalue, then power iteration on H - s*I for the other extreme. The algorithm was checked against `eigvalsh` in a numpy replica; the torch
 version has tests that have not yet been run. eta* = 2/lambda_max is for plain GD only.
 
+**A bug in my own estimator (found from a user's odd-looking result).** Shifted power iteration returned lam_max ~ 0.02 in most segments and a
+jump 0.027 -> 3.88 on impulse noise. A numpy replica with a spectrum like the measured one (lambda_min = -17, bulk ~ 0) shows the cause: after the
+shift the bulk sits at +17 and the true top eigenvalue is a ~0.02% bump, the iteration stops after 2 steps on the bulk, reports ~0 (true 3.88 -> reported 0.003)
+and still says converged. Lesson: 'converged' only means two successive iterates agreed, not that the right eigenvalue was found; test an estimator on a
+synthetic spectrum that looks like the real one. Fix: Lanczos (`src/utils/lanczos.py`, tested on synthetic spectra, no torch needed).
+
 **What the numbers do NOT say.** Phase 3 shows TENT collapse in 3/3 seeds in our setup (nchw, our collapse rule). It does not yet show *why*;
 the toy-vs-real comparison is Phase 5.
 

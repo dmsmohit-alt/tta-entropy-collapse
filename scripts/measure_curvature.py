@@ -41,6 +41,11 @@ def main() -> None:
     ap.add_argument("--n-segments", type=int, default=5, help="first batch of each of the first N corruption segments")
     ap.add_argument("--method", choices=["lanczos", "power"], default="lanczos",
                     help="power = old shifted power iteration; UNRELIABLE when |lam_min| >> lam_max (see src/utils/lanczos.py)")
+    ap.add_argument("--segment-ids", type=int, nargs="+", default=None,
+                    help="measure only these segment indices (0-based, order of the stream), e.g. 11; overrides --n-segments")
+    ap.add_argument("--ncv", type=int, default=60, help="Lanczos subspace size (cross-check: double it)")
+    ap.add_argument("--tol", type=float, default=1e-4, help="Lanczos tolerance (do not go below ~1e-5: HVPs are float32)")
+    ap.add_argument("--lanczos-seed", type=int, default=None, help="start-vector seed only (same batch!); default = --seed")
     ap.add_argument("--n-iter", type=int, default=50, help="power method only")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--batch-size", type=int, default=None)
@@ -58,19 +63,21 @@ def main() -> None:
     rows = []
     for batch in iter_stream(spec):
         seg = batch.step // per_seg
-        if seg >= a.n_segments:
+        last = max(a.segment_ids) if a.segment_ids else a.n_segments - 1
+        if seg > last:
             break
-        if batch.step % per_seg:
+        if batch.step % per_seg or (a.segment_ids and seg not in a.segment_ids):
             continue
         x = to_tensor(batch.x, device, layout)
         for lam in a.lams:
             model = configure_model_for_tta(copy.deepcopy(base))
             lf = mean_entropy if lam == 0 else partial(info_max_loss, lam=lam)
-            e = (hessian_extremes_lanczos(model, lf, x, seed=a.seed) if a.method == "lanczos"
+            e = (hessian_extremes_lanczos(model, lf, x, ncv=a.ncv, tol=a.tol,
+                                                          seed=a.seed if a.lanczos_seed is None else a.lanczos_seed) if a.method == "lanczos"
                  else hessian_extremes(model, lf, x, n_iter=a.n_iter, seed=a.seed))
             eta_star = 2.0 / e.lam_max if e.lam_max > 0 else float("nan")
             rows.append({"segment": seg, "corruption": batch.corruption, "severity": spec.severity, "batch_size": len(batch.y),
-                         "lam": lam, "method": a.method, "lam_max": e.lam_max, "lam_min": e.lam_min, "eta_star_gd": eta_star,
+                         "lam": lam, "method": a.method, "ncv": a.ncv, "tol": a.tol, "lam_max": e.lam_max, "lam_min": e.lam_min, "eta_star_gd": eta_star,
                          "converged_max": e.converged_max, "converged_min": e.converged_min, "n_hvp": e.n_hvp})
             print(rows[-1], flush=True)
             del model

@@ -12,9 +12,26 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import yaml
 
 KEYS = ["overall_err", "err_last_cycle", "final_acc_last_cycle", "max_top_frac", "mean_top_frac_last_cycle",
         "final_H_bar_ema", "seconds"]
+
+
+def layout_of(run_dir: Path, summary: dict) -> str:
+    """Layout a run used: summary.json first, then config.yaml (compute.input_layout); 'unrecorded' if neither has it.
+    If both exist and disagree we say so instead of picking one."""
+    from_summary = summary.get("input_layout")
+    from_config = None
+    cfg_file = run_dir / "config.yaml"
+    if cfg_file.exists():
+        try:
+            from_config = (yaml.safe_load(cfg_file.read_text()) or {}).get("compute", {}).get("input_layout")
+        except yaml.YAMLError:
+            pass
+    if from_summary and from_config and from_summary != from_config:
+        return f"CONFLICT(summary={from_summary},config={from_config})"
+    return from_summary or from_config or "unrecorded"
 
 
 def main() -> None:
@@ -24,10 +41,11 @@ def main() -> None:
     groups: dict[tuple[str, str], list[dict]] = {}
     for f in sorted(exp.glob("*/*/summary.json")):
         s = json.loads(f.read_text())
+        s["_layout"] = layout_of(f.parent, s)
         groups.setdefault((f.parent.parent.name, f.parent.name.rsplit("_seed", 1)[0]), []).append(s)
     rows = []
     for (method, h), runs in groups.items():
-        row: dict = {"method": method, "layout": runs[0].get("input_layout", "as_is(old)"), "config_hash": h, "n_runs": len(runs),
+        row: dict = {"method": method, "layout": "/".join(sorted({r["_layout"] for r in runs})), "config_hash": h, "n_runs": len(runs),
                      "seeds": sorted(r["seed"] for r in runs)}
         for k in KEYS:
             v = np.array([r[k] for r in runs if r.get(k) is not None], dtype=float)
