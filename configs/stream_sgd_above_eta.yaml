@@ -1,0 +1,39 @@
+# Phase 4 EXPLORATORY dose-response: SGD + marginal entropy (lam=1) with step sizes around eta*_min = 0.2857
+# (Lanczos, severity-3 stream, contrast segment, lam_max ~ 7.0; user-reported). c = eta / eta*_min.
+# PREDICTIONS written BEFORE running (so that the result can contradict them):
+#   P1. If eta* measured at the source weights says anything about the real dynamics, then c = 2.0 (eta = 0.5714) should be
+#       clearly worse than c = 0.5 (eta = 0.1429): higher error, and/or non-finite logits (summary.diverged_step), mainly in the
+#       sharpest segments (contrast-like). P2. If c = 2.0 looks the same as c = 0.5, then eta* measured at the source weights does
+#       NOT predict the stream behaviour, and the SGD arm cannot be used as evidence for the theory's eta* condition.
+#   Caveats: eta* belongs to plain GD near a STATIONARY point; source weights are not stationary; other segments have
+#   lam_max down to ~2.5 (their local eta* is up to 0.8), so c = 2.0 is above eta* only for the sharpest segments.
+#   Seed 0 only => exploratory. Collapse by marginal imbalance is NOT expected for lam=1; look at err_by_cycle instead.
+# Run (22 min each on RTX 2050):  python scripts/run_stream.py --config configs/stream_sgd_above_eta.yaml
+#   more points:  ... methods=[tent_im_sgd_lam1_c0p9,tent_im_sgd_lam1_c1p1,tent_im_sgd_lam1_c2p0]
+experiment:
+  name: stream_tent
+  seeds: [0]
+  skip_existing: true
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 15
+  severity: 5
+  num_cycles: 10
+  shuffle: true
+  max_steps: null
+
+methods: [tent_im_sgd_lam1_c2p0]
+tta:
+  tent_im_sgd_lam1_c0p9: {kind: tent, optimizer: sgd, lr: 0.2571, lam: 1.0, momentum: 0.0, weight_decay: 0.0, steps: 1}
+  tent_im_sgd_lam1_c1p1: {kind: tent, optimizer: sgd, lr: 0.3143, lam: 1.0, momentum: 0.0, weight_decay: 0.0, steps: 1}
+  tent_im_sgd_lam1_c2p0: {kind: tent, optimizer: sgd, lr: 0.5714, lam: 1.0, momentum: 0.0, weight_decay: 0.0, steps: 1}

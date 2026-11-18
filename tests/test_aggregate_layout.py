@@ -25,3 +25,10 @@ def test_layout_sources(tmp_path):
 
 def test_missing_config_file(tmp_path):
     assert agg.layout_of(tmp_path, {}) == "unrecorded"
+
+
+def test_describe_tta():
+    assert agg.describe_tta({}) == "n/a"
+    assert agg.describe_tta({"tta": {"kind": "tent", "optimizer": "sgd", "lr": 0.1429, "momentum": 0.0, "lam": 1.0}}) == \
+        "opt=sgd lr=0.1429 mom=0.0 lam=1.0"
+    assert "T=1000" in agg.describe_tta({"tta": {"optimizer": "adam", "lr": 0.001, "reset_every": 1000}})

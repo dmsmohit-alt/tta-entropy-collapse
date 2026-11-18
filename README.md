@@ -144,14 +144,15 @@ slower than contiguous NCHW input (see `results/bench_bn_layout/model.csv`). The
   seg 6 0.1768/0.1959; seg 9 0.2252/0.2706; seg 14 0.2911/0.3604. I.e. trajectories stay together for ~6 segments, then drift apart (one seed only).
 - Layout study (TENT, 1 cycle, 3 seeds; user-reported): as_is 0.2579 +/- 0.0452 (848 s per run), nchw 0.2712 +/- 0.0312 (150 s per run); n_collapsed 0 in both.
   The difference of means (0.013) is well inside the seed std, so with n = 3 a layout effect is **not detectable** here; that is absence of evidence, not
-  evidence of absence. The correct comparison is paired per seed (`scripts/compare_runs_paired.py`): **TBD**.
+  evidence of absence. Paired per seed (user-reported, nchw - as_is on identical batches): +0.0240, +0.0195, -0.0036; mean +0.0133, std of differences 0.0148, n = 3.
+  Two of three seeds favour as_is; with n = 3 this is not distinguishable from zero.
 - Does the collapse timing depend on layout? **Unknown.** TENT collapse start varies by +/- 1455 steps across seeds (nchw), so one as_is run cannot resolve a timing difference.
 
 Notes: the stream order depends on the seed only, so all methods see identical batches. The source model is a single
 trained checkpoint, so seed std reflects stream order, not source-training variance (a limitation).
 
 Caveats for the Phase 3 numbers: collapse is defined by our own rule (assumption); one source checkpoint, so std is stream-order
-only; TENT is layout-sensitive (above), and the layout study is still pending (**TBD**); the user reports `pytest -q`: 81 passed, 0 skipped (2026-11-18, two runs, both 81; not seen by the author).
+only; TENT is layout-sensitive (above), and the layout study is still pending (**TBD**); the user reports `pytest -q`: 83 passed, 0 skipped (2026-11-18, latest report; an earlier run gave 81; not seen by the author).
 
 ### Phase 4: TENT + marginal entropy, RDumb-style reset, SGD arm - code only, NO results yet
 
@@ -184,8 +185,10 @@ python scripts/aggregate_runs.py --exp-dir results/stream_tent
 | Observation | Both collapse-preventing variants are *worse* than BN-adapt alone (0.2256) in overall error; whether this is a slow per-cycle drift, a cost of the entropy objective itself, or lam/T not tuned is **unknown** (needs err_by_cycle and the sweeps) |
 | lam sweep / T sweep | TBD |
 | Severity-3 selection | TBD |
-| Measured lambda_max / eta*_GD of the BN-parameter Hessian (source weights) | Power-iteration numbers (user's run, 5 segments, severity 3) are **superseded**: that estimator is unreliable when |lambda_min| >> lambda_max. Lanczos run (user-reported, 15 segments, severity 3, batch 200, source weights; `results/curvature/.../curvature.csv` not seen by the author): lambda_max 2.5 to 7.0, lambda_min -6.4 to -17.2, nearly identical for lam=0 and lam=1; min eta*_GD = 0.2873 (lam=0), 0.2857 (lam=1), both from the contrast segment; impulse noise lambda_max 3.80 / 4.01 (so the earlier 0.027 -> 3.88 jump was an estimator artifact). Contrast cross-check with larger ncv / other start vector: TBD |
-| SGD arm (eta < eta*), eta = 0.5 x 0.2857 = 0.1429 for both arms (plain SGD, momentum 0) | TBD (runs pending) |
+| Measured lambda_max / eta*_GD of the BN-parameter Hessian (source weights) | Power-iteration numbers (user's run, 5 segments, severity 3) are **superseded**: that estimator is unreliable when |lambda_min| >> lambda_max. Lanczos run (user-reported, 15 segments, severity 3, batch 200, source weights; `results/curvature/.../curvature.csv` not seen by the author): lambda_max 2.5 to 7.0, lambda_min -6.4 to -17.2, nearly identical for lam=0 and lam=1; min eta*_GD = 0.2873 (lam=0), 0.2857 (lam=1), both from the contrast segment; impulse noise lambda_max 3.80 / 4.01 (so the earlier 0.027 -> 3.88 jump was an estimator artifact). Contrast cross-check (ncv 120, tol 1e-5, other start vector; user-reported): lambda_max 6.960 / 6.999, lambda_min -7.78 / -7.70, same as before |
+| SGD arm, eta = 0.5 x 0.2857 = 0.1429 (plain SGD, momentum 0), `tent_sgd` (lam=0) | overall error 0.7572, collapsed 3/3, start 4617 +/- 1645 [user's aggregate output, not seen by the author] |
+| SGD arm, `tent_im_sgd_lam1` | overall 0.3652; last-cycle 0.5654 +/- 0.0677; collapsed 0/3; top-class fraction 0.13; final H(p_bar) EMA 2.30 (= log 10: marginal essentially uniform). **Last-cycle error is above Source (0.447) although the marginal is balanced**: a balanced marginal does not imply correct predictions. Cause unknown; per-cycle error (`aggregate_per_cycle.csv`): TBD |
+| eta > eta* exploratory runs (`configs/stream_sgd_above_eta.yaml`, seed 0, predictions pre-registered in the file) | TBD |
 
 Limitations of the curvature estimate: one batch per segment, at the source weights only, power iteration (see `--n-iter`, `converged_*` columns); the Hessian along the adapted trajectory may differ.
 The batch-marginal term assumes roughly class-balanced batches; on a class-imbalanced stream it may push the wrong way (ablation planned in Phase 5).
