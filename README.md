@@ -188,7 +188,27 @@ python scripts/aggregate_runs.py --exp-dir results/stream_tent
 | Measured lambda_max / eta*_GD of the BN-parameter Hessian (source weights) | Power-iteration numbers (user's run, 5 segments, severity 3) are **superseded**: that estimator is unreliable when |lambda_min| >> lambda_max. Lanczos run (user-reported, 15 segments, severity 3, batch 200, source weights; `results/curvature/.../curvature.csv` not seen by the author): lambda_max 2.5 to 7.0, lambda_min -6.4 to -17.2, nearly identical for lam=0 and lam=1; min eta*_GD = 0.2873 (lam=0), 0.2857 (lam=1), both from the contrast segment; impulse noise lambda_max 3.80 / 4.01 (so the earlier 0.027 -> 3.88 jump was an estimator artifact). Contrast cross-check (ncv 120, tol 1e-5, other start vector; user-reported): lambda_max 6.960 / 6.999, lambda_min -7.78 / -7.70, same as before |
 | SGD arm, eta = 0.5 x 0.2857 = 0.1429 (plain SGD, momentum 0), `tent_sgd` (lam=0) | overall error 0.7572, collapsed 3/3, start 4617 +/- 1645 [user's aggregate output, not seen by the author] |
 | SGD arm, `tent_im_sgd_lam1` | overall 0.3652; last-cycle 0.5654 +/- 0.0677; collapsed 0/3; top-class fraction 0.13; final H(p_bar) EMA 2.30 (= log 10: marginal essentially uniform). **Last-cycle error is above Source (0.447) although the marginal is balanced**: a balanced marginal does not imply correct predictions. Cause unknown; per-cycle error (`aggregate_per_cycle.csv`): TBD |
-| eta > eta* exploratory runs (`configs/stream_sgd_above_eta.yaml`, seed 0, predictions pre-registered in the file) | TBD |
+| eta > eta*: `tent_im_sgd_lam1_c2p0` (lr 0.5714 = 2 x eta*_min, seed 0 only) | overall 0.7108; last-cycle 0.7971; top-class collapse flag False; final H(p_bar) EMA 2.298; top_frac ~0.13; cycle-0 error 0.401 (vs 0.196 for c = 0.5, seed mean). **Balanced marginal, yet error 0.71-0.80.** c = 0.9, 1.1, 0.25 runs: TBD |
+| Per-cycle error, seed means (user-reported; only the values the user listed, full table in `aggregate_per_cycle.csv`: TBD) | BN-adapt flat 0.226; TENT (Adam) 0.271 -> 0.859; TENT+lam1 (Adam) 0.198, 0.214, 0.231, ..., 0.327; TENT+lam1 (SGD, lr 0.1429) 0.196, 0.224, 0.248, ..., 0.565; RDumb T=1000 saw-tooth, 0.236 to 0.361; `tent_sgd` 0.316 -> 0.870 |
+
+**Two different failure modes (terminology used from here on).**
+1. *Marginal collapse*: one class dominates (`top_frac > 0.9` for 5 batches; `src/metrics/collapse.py`). This is the failure the toy theory describes.
+2. *Degradation*: error rises above a reference while the marginal can stay balanced. Defined by `scripts/degradation_metrics.py`: first cycle where the
+   seed-mean error exceeds the BN-adapt error (primary) or Source error (secondary) by more than delta = 0.01 (absolute); also `sustained`, `n_degraded`,
+   per-seed onsets paired with the same seed's reference. delta = 0.01 is far above BN-adapt's seed noise (~1e-4) and below all effects seen so far; it was
+   **fixed after seeing the Phase 4d per-cycle means, so it is not blind for those runs**, only for later ones (c = 0.9 / 1.1 / 0.25, selection, sweeps).
+   Sensitivity delta in {0, 0.02, 0.05} is in `degradation.csv`.
+
+Observations so far (seed means, 3 seeds unless noted; interpretation is hypothesis, not a result):
+- The marginal term (lam = 1) prevents marginal collapse in every run reported (0/3 for Adam and SGD; also at eta = 2 x eta*_min, seed 0).
+- It does not prevent degradation: every lam = 1 arm drifts upward over cycles, and the SGD arm ends above Source (0.565 vs 0.447).
+- In cycle 0 the lam = 1 arms (0.198 Adam, 0.196 SGD) are below BN-adapt (0.226). Paired per-seed difference: `python scripts/compare_runs_paired.py --exp-dir results/stream_tent --method-a bn_adapt --method-b tent_im_lam1 --cycle 0` (same for `tent_im_sgd_lam1`): TBD.
+- Why a balanced marginal can be wrong (hypothesis): the objective E[H(p)] - lam H(p_bar) never sees labels; any confident AND balanced labelling is a minimiser, correct or not.
+
+```bash
+python scripts/degradation_metrics.py --exp-dir results/stream_tent          # -> degradation.csv
+python scripts/compare_runs_paired.py --exp-dir results/stream_tent --method-a bn_adapt --method-b tent_im_lam1 --cycle 0
+```
 
 Limitations of the curvature estimate: one batch per segment, at the source weights only, power iteration (see `--n-iter`, `converged_*` columns); the Hessian along the adapted trajectory may differ.
 The batch-marginal term assumes roughly class-balanced batches; on a class-imbalanced stream it may push the wrong way (ablation planned in Phase 5).

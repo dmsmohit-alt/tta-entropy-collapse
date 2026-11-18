@@ -10,6 +10,13 @@
 #   Seed 0 only => exploratory. Collapse by marginal imbalance is NOT expected for lam=1; look at err_by_cycle instead.
 # Run (22 min each on RTX 2050):  python scripts/run_stream.py --config configs/stream_sgd_above_eta.yaml
 #   more points:  ... methods=[tent_im_sgd_lam1_c0p9,tent_im_sgd_lam1_c1p1,tent_im_sgd_lam1_c2p0]
+# SMALLER lr (does degradation slow down?). In the small-step regime SGD follows a gradient flow in 'time' = eta x steps, so
+# c = 0.25 needs TWICE the steps of c = 0.5 (eta*steps of c0.5 after 10 cycles = 0.1429 x 7500) -> 20 cycles (~44 min):
+#   python scripts/run_stream.py --config configs/stream_sgd_above_eta.yaml methods=[tent_im_sgd_lam1_c0p25] stream.num_cycles=20
+#   c = 0.1 would need 50 cycles (~1.8 h): only if c = 0.25 is informative. Cycles 0-9 are identical batches in 10- and 20-cycle runs.
+#   For degradation_metrics.py also run references of the same length: methods=[source,bn_adapt] stream.num_cycles=20 (bn_adapt ~20 min).
+#   Prediction (hypothesis, not a result): drift-dominated => curves vs (eta x cycle) coincide; noise-dominated => smaller eta degrades
+#   LESS at equal eta x steps (minibatch noise per unit 'time' scales with eta).
 experiment:
   name: stream_tent
   seeds: [0]
@@ -34,6 +41,8 @@ stream:
 
 methods: [tent_im_sgd_lam1_c2p0]
 tta:
+  tent_im_sgd_lam1_c0p1: {kind: tent, optimizer: sgd, lr: 0.0286, lam: 1.0, momentum: 0.0, weight_decay: 0.0, steps: 1}
+  tent_im_sgd_lam1_c0p25: {kind: tent, optimizer: sgd, lr: 0.0714, lam: 1.0, momentum: 0.0, weight_decay: 0.0, steps: 1}
   tent_im_sgd_lam1_c0p9: {kind: tent, optimizer: sgd, lr: 0.2571, lam: 1.0, momentum: 0.0, weight_decay: 0.0, steps: 1}
   tent_im_sgd_lam1_c1p1: {kind: tent, optimizer: sgd, lr: 0.3143, lam: 1.0, momentum: 0.0, weight_decay: 0.0, steps: 1}
   tent_im_sgd_lam1_c2p0: {kind: tent, optimizer: sgd, lr: 0.5714, lam: 1.0, momentum: 0.0, weight_decay: 0.0, steps: 1}

@@ -171,6 +171,19 @@ synthetic spectrum that looks like the real one. Fix: Lanczos (`src/utils/lanczo
 **What the numbers do NOT say.** Phase 3 shows TENT collapse in 3/3 seeds in our setup (nchw, our collapse rule). It does not yet show *why*;
 the toy-vs-real comparison is Phase 5.
 
+**Collapse is not the only way to fail (Phase 4d).** With lam = 1 the marginal stays at log K (top_frac ~ 0.13) yet error climbs cycle after cycle, and at
+eta = 2 x eta*_min it reaches 0.71 overall. `E[H] - lam H(p_bar)` is label-free; confident balanced but wrong labellings are as good as right ones. So we track
+two failure modes with two metrics (top-class collapse, error-based degradation). Writing the degradation rule down: a rule fixed AFTER seeing numbers is
+honest only if you say so (we did, in README and the script docstring) and is only blind for later runs.
+
+**Reading eta* in the real network.** The theory's eta* is about the local stability of a stationary point under plain GD. The c = 2.0 run is confounded: it
+has 4x larger steps everywhere, and only the sharpest segments (lam_max up to ~7, local eta* ~ 0.29) are above their own eta*. Tests that separate the
+explanations: (a) a knee between c = 0.9 and c = 1.1 would point to eta*, a smooth rise would point to a generic step-size effect; (b) per segment, degradation
+at c = 2.0 vs c = 0.5 against that segment's lam_max (curvature measured on severity 3, stream on severity 5: a caveat).
+
+**Gradient-flow time.** For small SGD steps the trajectory depends on eta x steps; halving eta needs twice the steps to reach the same point. Hence c = 0.25
+needs 20 cycles to cover what c = 0.5 does in 10. Deviations from that collapse tell drift from minibatch noise (noise per unit time scales with eta).
+
 ## Open questions to verify numerically (later phases, not claimed yet)
 
 - Does the toy stability picture (negative curvature at low margin, `lam > lam_c` fixes it) show up in a real network? (Phases 3-5)

@@ -1,0 +1,9 @@
+method,tta,layout,config_hash,onset_vs_bn_adapt,sustained_vs_bn_adapt,n_degraded_vs_bn_adapt,final_excess_vs_bn_adapt,per_seed_onset_vs_bn_adapt,cycles_judged_vs_bn_adapt,n_seeds_vs_bn_adapt,onset_vs_bn_adapt_delta0.0,onset_vs_bn_adapt_delta0.01,onset_vs_bn_adapt_delta0.02,onset_vs_bn_adapt_delta0.05,onset_vs_source,sustained_vs_source,n_degraded_vs_source,final_excess_vs_source,per_seed_onset_vs_source,cycles_judged_vs_source,n_seeds_vs_source
+rdumb_T1000,opt=adam lr=0.001 lam=0.0 T=1000,nchw,88ba82d1,0,True,10,0.0284,"[0, 0, 0]",10,3,0,0,0,2,,,0,-0.1935,"[None, None, None]",10,3
+tent,opt=adam lr=0.001,nchw,b27c5631,0,True,10,0.6337,"[0, 0, 0]",10,3,0,0,0,1,2.0,True,8,0.4118,"[2, 2, 1]",10,3
+tent_im_lam1,opt=adam lr=0.001 lam=1.0,nchw,a11f7031,3,True,7,0.1019,"[2, 4, 3]",10,3,2,3,3,6,,,0,-0.1199,"[None, None, None]",10,3
+tent_im_sgd_lam1,opt=sgd lr=0.1429 mom=0.0 lam=1.0,nchw,dfa53d9f,2,True,8,0.3399,"[2, 2, 2]",10,3,2,2,2,3,7.0,True,3,0.1181,"[9, 7, 7]",10,3
+tent_im_sgd_lam1_c0p9,opt=sgd lr=0.2571 mom=0.0 lam=1.0,nchw,3a4d3cdb,1,True,9,0.5577,[1],10,1,1,1,1,1,4.0,True,6,0.3354,[4],10,1
+tent_im_sgd_lam1_c1p1,opt=sgd lr=0.3143 mom=0.0 lam=1.0,nchw,c4a5285c,1,True,9,0.691,[1],10,1,0,1,1,1,3.0,True,7,0.4687,[3],10,1
+tent_im_sgd_lam1_c2p0,opt=sgd lr=0.5714 mom=0.0 lam=1.0,nchw,51457125,0,True,10,0.5721,[0],10,1,0,0,0,0,1.0,True,9,0.3498,[1],10,1
+tent_sgd,opt=sgd lr=0.1429 mom=0.0 lam=0.0,nchw,78c9dd9f,0,True,10,0.6446,"[0, 0, 0]",10,3,0,0,0,0,1.0,True,9,0.4227,"[1, 1, 1]",10,3
