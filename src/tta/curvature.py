@@ -11,6 +11,8 @@ What this is and is not:
   It is an estimate: `converged` says whether successive Rayleigh quotients agreed to `tol` (relative).
 - Real networks are piecewise-linear (ReLU): this is the Hessian of the smooth almost-everywhere function.
 - eta* = 2/lambda_max applies to plain GD (momentum 0). It does NOT directly apply to Adam.
+- KNOWN FLAW of `hessian_extremes` (power iteration): if |lambda_min| >> the rest of the spectrum, the shifted pass stops after ~2 steps
+  on the spectral bulk, reports lambda_max ~ 0 and still says 'converged'. Use `hessian_extremes_lanczos` (default in measure_curvature.py).
 """
 from __future__ import annotations
 
@@ -80,3 +82,26 @@ def hessian_extremes(model: nn.Module, loss_fn: Callable[[Tensor], Tensor], x: T
     if dom >= other:
         return Extremes(dom, other, ok1, ok2, n1 + n2)
     return Extremes(other, dom, ok2, ok1, n1 + n2)
+
+
+def hessian_extremes_lanczos(model: nn.Module, loss_fn: Callable[[Tensor], Tensor], x: Tensor, ncv: int = 60,
+                             tol: float = 1e-4, maxiter: int = 300, seed: int = 0) -> Extremes:
+    """Same quantities as `hessian_extremes`, via Lanczos (src/utils/lanczos.py). PREFER THIS ONE (see that module)."""
+    import numpy as np
+
+    from src.utils.lanczos import lanczos_extremes
+
+    params = [p for p in model.parameters() if p.requires_grad]
+    if not params:
+        raise ValueError("model has no trainable parameters")
+    hvp = _hvp_fn(loss_fn(model(x)), params)
+    shapes, sizes = [p.shape for p in params], [p.numel() for p in params]
+    dev, dt = params[0].device, params[0].dtype
+
+    def matvec(v: "np.ndarray") -> "np.ndarray":
+        t = torch.from_numpy(np.ascontiguousarray(v)).to(device=dev, dtype=dt)
+        parts = [c.reshape(sh) for c, sh in zip(torch.split(t, sizes), shapes)]
+        return torch.cat([h.reshape(-1) for h in hvp(parts)]).detach().double().cpu().numpy()
+
+    r = lanczos_extremes(matvec, sum(sizes), ncv=ncv, tol=tol, maxiter=maxiter, seed=seed)
+    return Extremes(r["lam_max"], r["lam_min"], r["converged_max"], r["converged_min"], r["n_matvec"])

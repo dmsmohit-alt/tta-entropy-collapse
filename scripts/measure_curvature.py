@@ -29,7 +29,7 @@ from src.data.tensors import to_tensor
 from src.metrics.entropy import info_max_loss, mean_entropy
 from src.models.bn import configure_model_for_tta
 from src.models.loader import load_source_model
-from src.tta.curvature import hessian_extremes
+from src.tta.curvature import hessian_extremes, hessian_extremes_lanczos
 from src.utils.config import load_config
 from src.utils.seeding import seed_everything
 
@@ -39,7 +39,9 @@ def main() -> None:
     ap.add_argument("--config", required=True)
     ap.add_argument("--lams", type=float, nargs="+", default=[0.0, 1.0])
     ap.add_argument("--n-segments", type=int, default=5, help="first batch of each of the first N corruption segments")
-    ap.add_argument("--n-iter", type=int, default=50)
+    ap.add_argument("--method", choices=["lanczos", "power"], default="lanczos",
+                    help="power = old shifted power iteration; UNRELIABLE when |lam_min| >> lam_max (see src/utils/lanczos.py)")
+    ap.add_argument("--n-iter", type=int, default=50, help="power method only")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--batch-size", type=int, default=None)
     ap.add_argument("overrides", nargs="*")
@@ -64,10 +66,11 @@ def main() -> None:
         for lam in a.lams:
             model = configure_model_for_tta(copy.deepcopy(base))
             lf = mean_entropy if lam == 0 else partial(info_max_loss, lam=lam)
-            e = hessian_extremes(model, lf, x, n_iter=a.n_iter, seed=a.seed)
+            e = (hessian_extremes_lanczos(model, lf, x, seed=a.seed) if a.method == "lanczos"
+                 else hessian_extremes(model, lf, x, n_iter=a.n_iter, seed=a.seed))
             eta_star = 2.0 / e.lam_max if e.lam_max > 0 else float("nan")
             rows.append({"segment": seg, "corruption": batch.corruption, "severity": spec.severity, "batch_size": len(batch.y),
-                         "lam": lam, "lam_max": e.lam_max, "lam_min": e.lam_min, "eta_star_gd": eta_star,
+                         "lam": lam, "method": a.method, "lam_max": e.lam_max, "lam_min": e.lam_min, "eta_star_gd": eta_star,
                          "converged_max": e.converged_max, "converged_min": e.converged_min, "n_hvp": e.n_hvp})
             print(rows[-1], flush=True)
             del model

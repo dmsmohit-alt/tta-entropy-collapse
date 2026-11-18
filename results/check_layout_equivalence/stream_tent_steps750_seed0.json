@@ -1,0 +1,90 @@
+{
+  "torch": "2.14.1+cu126",
+  "cudnn": 91002,
+  "model": {
+    "source": "checkpoint",
+    "arch": "ResNet18CIFAR",
+    "path": "checkpoints\\resnet18_cifar10_seed0.pt",
+    "sha256": "26ffc8ed79fe30e110c8e85e7b14b2af41c9d31c5b7ec55c08cc18fb8f1aeb75",
+    "clean_test_acc_at_training": 0.94
+  },
+  "deterministic": true,
+  "args": {
+    "config": "configs/stream_tent.yaml",
+    "steps": 750,
+    "seed": 0,
+    "methods": [
+      "tent"
+    ],
+    "control": true,
+    "segments": true
+  },
+  "rows": [
+    {
+      "method": "tent",
+      "pair": "as_is vs nchw",
+      "steps": 750,
+      "samples": 150000,
+      "max_abs_dlogit": 27.696069717407227,
+      "pred_diffs": 11321,
+      "err_a": 0.23693333333333333,
+      "err_b": 0.2608866666666667,
+      "d_err": 0.023953333333333382,
+      "steps_differ": 592,
+      "max_abs_step_err_diff": 0.125,
+      "max_abs_dparam": 0.09155202656984329
+    },
+    {
+      "method": "tent",
+      "pair": "nchw vs nchw (control)",
+      "steps": 750,
+      "samples": 150000,
+      "max_abs_dlogit": 0.0,
+      "pred_diffs": 0,
+      "err_a": 0.2608866666666667,
+      "err_b": 0.2608866666666667,
+      "d_err": 0.0,
+      "steps_differ": 0,
+      "max_abs_step_err_diff": 0.0,
+      "max_abs_dparam": 0.0
+    }
+  ],
+  "segments": {
+    "tent": {
+      "as_is": [
+        0.26940000000000003,
+        0.21559999999999999,
+        0.29469999999999996,
+        0.16740000000000002,
+        0.32539999999999997,
+        0.21,
+        0.17679999999999998,
+        0.21840000000000004,
+        0.2198,
+        0.22519999999999996,
+        0.16369999999999998,
+        0.22790000000000002,
+        0.293,
+        0.2556,
+        0.29109999999999997
+      ],
+      "nchw": [
+        0.26940000000000003,
+        0.2148,
+        0.29529999999999995,
+        0.16670000000000001,
+        0.3245,
+        0.21139999999999998,
+        0.1959,
+        0.24119999999999997,
+        0.24059999999999998,
+        0.2706,
+        0.2134,
+        0.2734,
+        0.3323,
+        0.3034,
+        0.3604
+      ]
+    }
+  }
+}
