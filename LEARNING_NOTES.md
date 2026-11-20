@@ -212,6 +212,15 @@ domain change is the easiest case. `reset_offset` moves the reset into the middl
 **A free identity check.** At the first batch after a reset the model is exactly BN-adapt (source affine parameters, batch statistics, prediction before the update),
 so error(method) - error(BN-adapt) on that batch must be 0. The analysis script prints the largest deviation as a test of the wrapper.
 
+**What the Phase 4 data support (and what they do not).** Supported (our setup only: one ResNet-18 checkpoint, CIFAR-10-C severity 5, 15 corruptions x 10 cycles,
+Adam lr 1e-3, batch 200): TENT collapses (3/3); the marginal term removes marginal collapse (0/3) but not error degradation; frequent resets (T = 250) beat BN-adapt
+(3/3, about 0.022) and T >= 1000 do not. Not supported: that eta < eta* gives stable updates (SGD with c = 0.5 still degrades; the per-segment test is pending), and that the
+marginal term is useful by itself. A title promising "stable updates" is therefore ahead of the evidence.
+
+**Why check related work before choosing the claim.** The reset result echoes RDumb, and "reset when collapse is likely" is already a 2026 paper (Lim et al.); the diversity
+term was compared in Niu et al. A claim that rests on those would not be new. What might be new is the dynamical toy analysis and the two-failure-mode measurement, which
+is why REFERENCES.md keeps the novelty check open instead of declaring it.
+
 ## Open questions to verify numerically (later phases, not claimed yet)
 
 - Does the toy stability picture (negative curvature at low margin, `lam > lam_c` fixes it) show up in a real network? (Phases 3-5)

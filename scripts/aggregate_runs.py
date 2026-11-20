@@ -32,7 +32,7 @@ def describe_tta(cfg: dict) -> str:
     if not t:
         return "n/a"
     parts = []
-    for k, short in (("optimizer", "opt"), ("lr", "lr"), ("momentum", "mom"), ("lam", "lam"), ("reset_every", "T")):
+    for k, short in (("optimizer", "opt"), ("lr", "lr"), ("momentum", "mom"), ("lam", "lam"), ("reset_every", "T"), ("reset_offset", "off")):
         if k in t and t[k] is not None:
             parts.append(f"{short}={t[k]}")
     return " ".join(parts) or "n/a"

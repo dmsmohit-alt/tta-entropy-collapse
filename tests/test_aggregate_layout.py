@@ -32,3 +32,9 @@ def test_describe_tta():
     assert agg.describe_tta({"tta": {"kind": "tent", "optimizer": "sgd", "lr": 0.1429, "momentum": 0.0, "lam": 1.0}}) == \
         "opt=sgd lr=0.1429 mom=0.0 lam=1.0"
     assert "T=1000" in agg.describe_tta({"tta": {"optimizer": "adam", "lr": 0.001, "reset_every": 1000}})
+
+
+def test_describe_tta_shows_reset_offset():
+    a = agg.describe_tta({"tta": {"optimizer": "adam", "lr": 0.001, "lam": 0.0, "reset_every": 250}})
+    b = agg.describe_tta({"tta": {"optimizer": "adam", "lr": 0.001, "lam": 0.0, "reset_every": 250, "reset_offset": 25}})
+    assert "off=" not in a and b.endswith("T=250 off=25") and a != b
