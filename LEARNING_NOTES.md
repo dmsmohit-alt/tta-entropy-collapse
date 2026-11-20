@@ -221,6 +221,16 @@ marginal term is useful by itself. A title promising "stable updates" is therefo
 term was compared in Niu et al. A claim that rests on those would not be new. What might be new is the dynamical toy analysis and the two-failure-mode measurement, which
 is why REFERENCES.md keeps the novelty check open instead of declaring it.
 
+**A design trap I should have seen: position in the reset window is confounded with corruption.** The stream repeats 15 corruptions of 50 steps (cycle = 750 steps).
+For T = 250 each corruption always sits at the same place in the reset window, so 'error vs steps since reset' mixes the effect of s with the effect of WHICH corruption
+is there. Counting connected components of the corruption-by-s-bin graph gives 5 blocks for T in {250, 500, 1000, 2000} (every T is a multiple of 250 and so is
+750), so no regression can separate them; 1 block (separable) for T = 50, 100, 350 and for T = 250 with offset 25. The check needs no GPU time: run `--design-check`
+BEFORE designing a run. Practical consequence: use the profile for the mechanism only descriptively, use overall error for decisions.
+
+**Break-even is a brittle statistic.** 'First bin from which every later bin is positive' changes with a single noisy bin; sev-3 gave 750 for T1000 and 975 for T2000 on the
+same seed and stream (the quantity moved by 225 steps between two runs of one design). Prefer a trailing rolling mean (as in `error_vs_step_noreset.py`) or the
+running mean of excess over a window (its minimum is where a reset period would minimise the mean excess if the profile transferred).
+
 ## Open questions to verify numerically (later phases, not claimed yet)
 
 - Does the toy stability picture (negative curvature at low margin, `lam > lam_c` fixes it) show up in a real network? (Phases 3-5)

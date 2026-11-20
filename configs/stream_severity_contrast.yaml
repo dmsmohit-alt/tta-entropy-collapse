@@ -1,0 +1,35 @@
+# Phase 4/5 SEVERITY CONTRAST: does the useful adaptation horizon depend on severity? (sev-3 vs sev-5 break-even steps differed: ~750-975 vs 250.)
+# Seeds 0, 1, 2 on purpose (NOT the selection seed 100): the stream seed fixes the image order inside each corruption, so seeds 0-2 at severity 3 use the same
+# images in the same order as the reported severity-5 runs (a paired severity contrast). This is an ANALYSIS stream, not a selection stream.
+# Runs: bn_adapt (reference) and rdumb_T2000 (longest window: s up to 2000). Cost: 3 x ~10 min + 3 x ~22 min = ~1.6 h.
+# Also needed for a symmetric comparison at severity 5 (T2000 has seed 0 only):
+#   python scripts/run_stream.py --config configs/stream_sweep_sev5.yaml methods=[rdumb_T2000] experiment.seeds=[1,2]     (~44 min)
+# Then:  python scripts/error_vs_steps_since_reset.py --exp-dir results/severity3_contrast --methods rdumb_T2000 --ref bn_adapt --bin 25
+#        (same with --exp-dir results/stream_tent for severity 5). CAUTION: the s-profile of T2000 is confounded with corruption identity
+#        (5 blocks, see --design-check); compare the two severities profile against profile, do not read corruption effects into it.
+# PREDICTION (hypothesis, written before running): the break-even is later at severity 3 (lower error, smaller entropy gradients) in all 3 seeds.
+experiment:
+  name: severity3_contrast
+  seeds: [0, 1, 2]
+  skip_existing: true
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 15
+  severity: 3
+  num_cycles: 10
+  shuffle: true
+  max_steps: null
+
+methods: [bn_adapt, rdumb_T2000]
+tta:
+  rdumb_T2000: {kind: tent, optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], lam: 0.0, weight_decay: 0.0, steps: 1, reset_every: 2000}

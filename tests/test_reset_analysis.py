@@ -49,3 +49,27 @@ def test_cli_end_to_end(tmp_path, monkeypatch, capsys):
     esr.main()
     assert "max|diff at s=0| = 0.00e+00" in capsys.readouterr().out
     assert (tmp_path / "error_vs_steps_since_reset.csv").exists() and (tmp_path / "error_vs_steps_since_reset.png").exists()
+
+
+def test_design_check_blocks():
+    assert esr.design_check(250, 0)[0] == 5 and esr.design_check(500, 0)[0] == 5 and esr.design_check(1000, 0)[0] == 5
+    assert esr.design_check(100, 0)[0] == 1 and esr.design_check(350, 0)[0] == 1 and esr.design_check(250, 25)[0] == 1
+
+
+def test_decompose_recovers_additive_profile_when_identifiable():
+    rng = np.random.default_rng(0)
+    alpha, beta = rng.normal(0, 0.05, 15), np.concatenate([[0.0], rng.normal(0, 0.03, 9)])
+    t = np.arange(7500)
+    s = esr.steps_since_reset(t, 250, 25)
+    rows = pd.DataFrame({"corruption": [f"c{k}" for k in (t % 750) // 50], "bin": (s // 25) * 25})
+    rows["diff"] = alpha[(t % 750) // 50] + beta[(s // 25).astype(int)]
+    dec = esr.decompose(rows, 25)
+    assert dec is not None
+    assert np.allclose(dec["adjusted_diff"].to_numpy(), alpha.mean() + beta[: len(dec)], atol=1e-8)
+
+
+def test_decompose_refuses_confounded_design():
+    t = np.arange(7500)
+    s = esr.steps_since_reset(t, 250, 0)
+    rows = pd.DataFrame({"corruption": [f"c{k}" for k in (t % 750) // 50], "bin": (s // 25) * 25, "diff": 0.0})
+    assert esr.decompose(rows, 25) is None

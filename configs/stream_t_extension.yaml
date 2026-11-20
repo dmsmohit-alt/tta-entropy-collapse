@@ -1,0 +1,37 @@
+# Phase 4/5 EXTENSION OF THE T GRID below 250 (T = 250 was the best AND the smallest T tried: the optimum is not located).
+# Run on the SELECTION stream (severity 3, seed 100), not on the reported severity-5 streams. T = 50, 100 and 150 are multiples of 50, i.e. aligned with
+# corruption boundaries (the offset control showed alignment is not the main factor at T = 250, seed 0). T = 1 would be BN-adapt exactly (prediction before update).
+# Identifiability note: the s-profile is separable from corruption identity for T = 50 and 100 but NOT for T = 150 (3 blocks); the overall error comparison is valid for all.
+# PREDICTIONS (written before running; they come from the severity-5 T250 per-bin profile, whose running mean is lowest for windows of ~150 steps):
+#   P1: on severity 3, T = 150 has lower overall error than T = 250 (0.1417 on this stream) or equal within 0.003.
+#   P2: error versus T is U-shaped: T = 50 is worse than T = 100/150 (adaptation needs some steps to pay off).
+#   If neither holds, the severity-5 profile does not transfer and T = 250 stays our best known value (still only a grid-edge value, not 'optimal').
+# Whatever is found, the main table keeps T = 250 as the SELECTED value (selection rule already applied); these are reported as extra, post-hoc points.
+# Cost: 3 x ~22 min. Run:  python scripts/run_stream.py --config configs/stream_t_extension.yaml
+experiment:
+  name: select_sev3
+  seeds: [100]
+  skip_existing: true
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 15
+  severity: 3
+  num_cycles: 10
+  shuffle: true
+  max_steps: null
+
+methods: [rdumb_T50, rdumb_T100, rdumb_T150]
+tta:
+  rdumb_T50: {kind: tent, optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], lam: 0.0, weight_decay: 0.0, steps: 1, reset_every: 50}
+  rdumb_T100: {kind: tent, optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], lam: 0.0, weight_decay: 0.0, steps: 1, reset_every: 100}
+  rdumb_T150: {kind: tent, optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], lam: 0.0, weight_decay: 0.0, steps: 1, reset_every: 150}
