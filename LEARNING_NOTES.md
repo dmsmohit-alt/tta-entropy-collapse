@@ -184,6 +184,34 @@ at c = 2.0 vs c = 0.5 against that segment's lam_max (curvature measured on seve
 **Gradient-flow time.** For small SGD steps the trajectory depends on eta x steps; halving eta needs twice the steps to reach the same point. Hence c = 0.25
 needs 20 cycles to cover what c = 0.5 does in 10. Deviations from that collapse tell drift from minibatch noise (noise per unit time scales with eta).
 
+**What the dose-response can and cannot say about eta*.** The measured local eta* spans 0.29 (contrast, lam_max ~ 7) to ~0.8 (lam_max ~ 2.5), so
+'eta > eta*' switches on segment by segment between c = 1 and c ~ 2.8: the theory predicts a smeared onset, not a sharp threshold. A smooth global
+curve therefore does not refute it, and a bump near c = 1 would not prove it. The discriminating test is per segment (`segment_vs_curvature.py`), with
+its own confounds (order of segments, severity-3 curvature vs severity-5 stream). Cycle 0 is the cleanest data (seed noise ~0.003): there the excess
+error grows smoothly with c (slopes 0.037 -> 0.085 -> 0.192 per unit c, ratio ~2.2 each).
+
+**Worse than chance.** Last-cycle error 0.916 at c = 1.1 is above the 0.90 of random guessing: the predictions are anti-correlated with the labels
+(a systematic wrong mapping), not noise. A label-free objective can reach that. Confusion matrices per cycle are now saved (`confusion_by_cycle.npy`,
+[cycle, true, predicted]) for NEW runs to look at it directly.
+
+**A cheap sanity check worth running.** rdumb_T1000 has no reset before step 1000, so its cycle-0 error must equal tent's cycle-0 error seed by seed
+(same method, same batches, deterministic nchw). If it does not, the wrapper has a bug.
+
+**A gap in my own pre-registered rule (Phase 4 selection).** The rule said "keep lam / T unless another value is better by more than 0.01". Two T values
+qualified (500 and 250) and the rule did not say which. I took the lowest-error qualifying candidate (T = 250) AFTER seeing the numbers and said so in the
+README; both candidates are reported with the same status. Lesson: write the rule as a function that returns exactly one answer for every possible outcome
+(here: "among qualifying candidates take the lowest error"), and test it on made-up numbers before running.
+
+**The best value was at the edge of the grid.** T = 250 is the smallest T tried and the error rose monotonically with T on both streams, so the true optimum may be
+smaller. A grid whose best point is at its edge has not located the optimum; do not describe 250 as "optimal". (T = 1 would be BN-adapt exactly, because the prediction is
+made before the update; so the curve over T must come back to the BN-adapt level at small T.)
+
+**Resets at known boundaries.** All T in the grid are multiples of 50 (batches per corruption), so every reset lands right before a new corruption. Resetting at a
+domain change is the easiest case. `reset_offset` moves the reset into the middle of a segment (control config). A prediction was written before running it.
+
+**A free identity check.** At the first batch after a reset the model is exactly BN-adapt (source affine parameters, batch statistics, prediction before the update),
+so error(method) - error(BN-adapt) on that batch must be 0. The analysis script prints the largest deviation as a test of the wrapper.
+
 ## Open questions to verify numerically (later phases, not claimed yet)
 
 - Does the toy stability picture (negative curvature at low margin, `lam > lam_c` fixes it) show up in a real network? (Phases 3-5)

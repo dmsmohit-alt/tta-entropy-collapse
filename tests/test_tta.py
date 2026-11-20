@@ -198,3 +198,14 @@ def test_periodic_reset_also_resets_optimizer_state():
 def test_reset_period_validation():
     with pytest.raises(ValueError):
         PeriodicReset(Tent(_tiny()), period=0)
+
+
+def test_reset_offset_shifts_schedule():
+    m = PeriodicReset(Tent(_tiny(), lr=1e-1), period=3, offset=1)     # resets before batch t when (t+1) % 3 == 0 and t > 0: t = 2, 5
+    seen = []
+    for t in range(7):
+        m(_batch(t + 1))
+        seen.append(m.n_resets)
+    assert seen == [0, 0, 1, 1, 1, 2, 2]
+    with pytest.raises(ValueError):
+        PeriodicReset(Tent(_tiny()), period=3, offset=3)

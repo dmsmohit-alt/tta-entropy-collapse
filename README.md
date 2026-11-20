@@ -83,11 +83,11 @@ Runs: `toy_stability/5dd255d1` (84 rows = 3 data seeds x 7 separations x 4 lambd
 - **Derived and verified:** bias flow `b_dot = E[p(log p + H)] - lam E[p(log pbar - <log pbar>_p)]`;
   at the balanced point the Hessian is `alpha_J (I - 11^T/K)` with `alpha_J = alpha_L + lam K s^2`;
   `eta* = 2/alpha_J`. Analytic Hessian vs finite differences: max error 3.4e-11.
-  PyTorch-autograd Hessian check: **TBD** (needs a machine with torch; test exists).
+  PyTorch-autograd Hessian check: `tests/test_dynamics.py::test_hessian_matches_torch_autograd_if_available` is not skipped on the user's machine (88 passed, 0 skipped), i.e. it ran and passed; the error size was not logged: **TBD**.
 - **eta\*, theory vs measurement:** `eta* = 2 / lambda_max(Hessian)` vs bisection on nonlinear GD:
   max relative error 0.19% over 57 stable rows (sample-level Hessians). The population `eta*` is higher than
   the N=1000 sample `eta*` (ratio 0.79 +/- 0.14). `eta*` values here (10 to 10^4) belong to this toy objective and are
-  **not** a learning rate for real networks (TBD in Phase 4).
+  **not** a learning rate for real networks (the real-network curvature was measured in Phase 4, see below).
 - **Curvature of plain entropy minimisation (K=5, population, Monte Carlo):** `alpha_L` is negative for sep <= 2
   (-0.099, -0.035, -0.0010 at sep 1, 1.5, 2) and positive from sep 2.5 (+0.0086); sign change near sep 2.05 [observed].
   This agrees with Phase 1, where sep 1 and 2 collapsed already at `delta = 0`.
@@ -133,8 +133,7 @@ slower than contiguous NCHW input (see `results/bench_bn_layout/model.csv`). The
 (also how the source model was trained). Layout changes floating-point rounding only, and:
 - Source and BNAdapt: practically unchanged (a handful of flipped predictions out of 150,000 on one cycle).
 - **TENT is layout-sensitive:** on one cycle (750 steps, one seed, identical batches) the two layouts gave visibly different error and
-  different adapted BN parameters. Magnitude: **TBD** (re-run `check_layout_equivalence.py --steps 750 --control --segments`; it saves
-  `results/check_layout_equivalence/*.json`). We do not know which layout is "more correct"; neither is ground truth.
+  different adapted BN parameters. Magnitude: see the user-reported numbers below (JSON in `results/check_layout_equivalence/`, not seen by the author). We do not know which layout is "more correct"; neither is ground truth.
   Consequence: single-run differences between TENT variants of a size comparable to this effect are not trustworthy; compare
   methods with >= 3 seeds, in ONE fixed layout, and report layout sensitivity as a limitation.
   Possible explanation, untested: entropy-minimisation dynamics amplify tiny perturbations (cf. the unstable balanced point in THEORY.md).
@@ -152,7 +151,7 @@ Notes: the stream order depends on the seed only, so all methods see identical b
 trained checkpoint, so seed std reflects stream order, not source-training variance (a limitation).
 
 Caveats for the Phase 3 numbers: collapse is defined by our own rule (assumption); one source checkpoint, so std is stream-order
-only; TENT is layout-sensitive (above), and the layout study is still pending (**TBD**); the user reports `pytest -q`: 83 passed, 0 skipped (2026-11-18, latest report; an earlier run gave 81; not seen by the author).
+only; TENT is layout-sensitive (above), and the layout study (3 seeds, 1 cycle) found no detectable layout effect at n = 3 (see above); the user reports `pytest -q`: 88 passed, 0 skipped (2026-11-18, latest report; the count grew 81 -> 83 -> 88 as tests were added; not seen by the author).
 
 ### Phase 4: TENT + marginal entropy, RDumb-style reset, SGD arm - code only, NO results yet
 
@@ -179,16 +178,24 @@ python scripts/aggregate_runs.py --exp-dir results/stream_tent
 
 | Experiment (severity 5, 3 seeds unless noted) | Result |
 |---|---|
-| TENT + marginal entropy (lam = 1, a priori), overall error / collapse | 0.2632 (collapsed 0/3) [from the user's aggregate output; std, last-cycle error, top_frac not yet seen by the author: TBD] |
+| TENT + marginal entropy (lam = 1, a priori), overall error / collapse | 0.2632 (collapsed 0/3) [from the user's aggregate output; per-cycle values in the row below; std and `top_frac` columns not seen by the author: TBD] |
 | RDumb-style (T = 1000, a priori), overall error / collapse | 0.2862 (collapsed 0/3) [same source, same TBDs] |
 | Reference rows (Phase 3, same stream) | Source 0.4473, BN-adapt 0.2256, TENT 0.6895 (collapse 3/3) |
 | Observation | Both collapse-preventing variants are *worse* than BN-adapt alone (0.2256) in overall error; whether this is a slow per-cycle drift, a cost of the entropy objective itself, or lam/T not tuned is **unknown** (needs err_by_cycle and the sweeps) |
-| lam sweep / T sweep | TBD |
-| Severity-3 selection | TBD |
+| Severity-3 selection stream (seed 100, 10 cycles, **one seed**, overall error; user-reported) | Source 0.2627, BN-adapt 0.1575, TENT 0.4615; lam 0.1 / 0.5 / 1 / 2: 0.1820 / 0.1887 / 0.1878 / 0.1947; RDumb-style T = 250 / 500 / 1000 / 2000: 0.1417 / 0.1479 / 0.1587 / 0.1883; n_collapsed 0 for all |
+| Selection rule applied (rule in `configs/stream_select_sev3.yaml`, written before the runs) | **lam**: best alternative lam = 0.1 is better than lam = 1 by 0.0058 < 0.01, so lam = 1 is kept. **T**: T = 500 (better than T = 1000 by 0.0108) and T = 250 (by 0.0170) both exceed 0.01. The rule did **not** say which one to take when several qualify (a gap in the rule, found only now). Reading used: the qualifying candidate with the lowest overall error, **T = 250**. This tie-break was fixed after seeing the selection results; to limit the damage T = 500 is reported with the same status (see the table below). |
+| Severity-5 sweep, **seed 0 only** (overall error; user-reported) | RDumb-style T = 250 / 500 / 1000 / 2000: 0.2009 / 0.2235 / 0.2832 / 0.4088 (T = 1000 3-seed mean: 0.2862). lam = 0.1 / 0.5 / 1 / 2: 0.2753 / 0.2447 / 0.2727 / 0.2928. BN-adapt 0.2256. Single-seed differences below ~0.02 are not reliable (lam = 1 is 0.2727 at seed 0 vs 0.2632 over 3 seeds). |
+| Observations (hypothesis level) | Error rises monotonically with T on both streams (sev-3 and sev-5, seed 0), and the smallest T tried (250) is the best: the grid has not found the minimum. On sev-3 every lam arm is worse than BN-adapt, and only T <= 500 beats it. On sev-5 seed 0 the best lam is 0.5, on sev-3 it is 0.1: the lam ranking is not stable across streams, which is why lam was not tuned. Resets in all four T are aligned with corruption boundaries (see the control below). |
+| RDumb-style T = 250 (selected), sev-5, 3 seeds | TBD (seeds 1, 2 running) |
+| Reset-phase control `rdumb_T250_off25` (`configs/stream_reset_control.yaml`, predictions written in the file) | TBD |
+| Error vs steps since reset (`scripts/error_vs_steps_since_reset.py`) | TBD |
 | Measured lambda_max / eta*_GD of the BN-parameter Hessian (source weights) | Power-iteration numbers (user's run, 5 segments, severity 3) are **superseded**: that estimator is unreliable when |lambda_min| >> lambda_max. Lanczos run (user-reported, 15 segments, severity 3, batch 200, source weights; `results/curvature/.../curvature.csv` not seen by the author): lambda_max 2.5 to 7.0, lambda_min -6.4 to -17.2, nearly identical for lam=0 and lam=1; min eta*_GD = 0.2873 (lam=0), 0.2857 (lam=1), both from the contrast segment; impulse noise lambda_max 3.80 / 4.01 (so the earlier 0.027 -> 3.88 jump was an estimator artifact). Contrast cross-check (ncv 120, tol 1e-5, other start vector; user-reported): lambda_max 6.960 / 6.999, lambda_min -7.78 / -7.70, same as before |
 | SGD arm, eta = 0.5 x 0.2857 = 0.1429 (plain SGD, momentum 0), `tent_sgd` (lam=0) | overall error 0.7572, collapsed 3/3, start 4617 +/- 1645 [user's aggregate output, not seen by the author] |
 | SGD arm, `tent_im_sgd_lam1` | overall 0.3652; last-cycle 0.5654 +/- 0.0677; collapsed 0/3; top-class fraction 0.13; final H(p_bar) EMA 2.30 (= log 10: marginal essentially uniform). **Last-cycle error is above Source (0.447) although the marginal is balanced**: a balanced marginal does not imply correct predictions. Cause unknown; per-cycle error (`aggregate_per_cycle.csv`): TBD |
-| eta > eta*: `tent_im_sgd_lam1_c2p0` (lr 0.5714 = 2 x eta*_min, seed 0 only) | overall 0.7108; last-cycle 0.7971; top-class collapse flag False; final H(p_bar) EMA 2.298; top_frac ~0.13; cycle-0 error 0.401 (vs 0.196 for c = 0.5, seed mean). **Balanced marginal, yet error 0.71-0.80.** c = 0.9, 1.1, 0.25 runs: TBD |
+| Dose-response, SGD + lam=1 (user-reported; c = eta / 0.2857; c = 0.5 is the 3-seed mean, c = 0.9 / 1.1 / 2.0 are **seed 0 only**) | per-cycle error, c=0.5 (eta 0.1429): 0.196 0.224 0.248 0.285 0.319 0.378 0.426 0.483 0.527 0.565 (overall 0.3652). c=0.9 (0.2571): 0.211 0.285 0.330 0.394 0.464 0.508 0.552 0.607 0.704 0.783 (overall 0.4838). c=1.1 (0.3143): 0.228 0.372 0.448 0.529 0.681 0.705 0.738 0.781 0.846 0.916 (overall 0.6244). c=2.0 (0.5714): 0.401 0.639 0.718 0.740 0.742 0.742 0.755 0.778 0.796 0.797 (overall 0.7108; diverged_step null). Marginal balanced in all: max top_frac 0.185-0.19, final H(p_bar) EMA 2.296-2.2985, 0 collapses. |
+| Reading of the dose-response (hypothesis level) | Cycle-0 error rises smoothly and convexly with c (slopes per unit c: 0.037, 0.085, 0.192; cycle-0 seed noise ~0.003): **no kink at c = 1 there**. Against t = eta x steps, c=0.9 stays within 0.03 of c=0.5 up to t ~ 500 and is lower later (up to 0.05, inside c=0.5's seed std 0.068); c=1.1 sits 0.03-0.09 above c=0.5 and ~0.08-0.11 above c=0.9 from t ~ 375. Compatible with an eta*-linked onset between c = 0.9 and 1.1, but not demonstrated: 4 points, one seed, a saturating metric (c=2.0 plateaus at 0.74-0.80), and the theory's eta* is per-segment (0.29 to 0.8), i.e. it predicts a smeared, not sharp, onset. Per-segment test (`scripts/segment_vs_curvature.py`): TBD. c = 1.1 last-cycle error 0.916 is above chance (0.90): predictions anti-correlated with labels; confusion matrices (new `confusion_by_cycle.npy`): TBD |
+| Degradation onset (delta = 0.01), vs BN-adapt / vs Source (user-reported) | tent (Adam) 0 / 2; tent_im_lam1 (Adam) 3 (per seed 2,4,3) / never (final excess vs Source -0.12); tent_im_sgd_lam1 c=0.5: 2 (2,2,2) / 7 (9,7,7); c=0.9: 1 / 4; c=1.1: 1 / 3; c=2.0: 0 / 1; tent_sgd: 0 / 1; rdumb_T1000: 0 / never (final excess vs BN-adapt +0.028) |
+| Paired cycle-0 difference, lam=1 arm minus BN-adapt (user-reported, 3 seeds) | tent_im_lam1: -0.0306, -0.0257, -0.0286 (mean -0.0283, std 0.0025). tent_im_sgd_lam1: -0.0324, -0.0286, -0.0272 (mean -0.0294, std 0.0027). Better in 3 of 3 seeds |
 | Per-cycle error, seed means (user-reported; only the values the user listed, full table in `aggregate_per_cycle.csv`: TBD) | BN-adapt flat 0.226; TENT (Adam) 0.271 -> 0.859; TENT+lam1 (Adam) 0.198, 0.214, 0.231, ..., 0.327; TENT+lam1 (SGD, lr 0.1429) 0.196, 0.224, 0.248, ..., 0.565; RDumb T=1000 saw-tooth, 0.236 to 0.361; `tent_sgd` 0.316 -> 0.870 |
 
 **Two different failure modes (terminology used from here on).**
@@ -202,7 +209,7 @@ python scripts/aggregate_runs.py --exp-dir results/stream_tent
 Observations so far (seed means, 3 seeds unless noted; interpretation is hypothesis, not a result):
 - The marginal term (lam = 1) prevents marginal collapse in every run reported (0/3 for Adam and SGD; also at eta = 2 x eta*_min, seed 0).
 - It does not prevent degradation: every lam = 1 arm drifts upward over cycles, and the SGD arm ends above Source (0.565 vs 0.447).
-- In cycle 0 the lam = 1 arms (0.198 Adam, 0.196 SGD) are below BN-adapt (0.226). Paired per-seed difference: `python scripts/compare_runs_paired.py --exp-dir results/stream_tent --method-a bn_adapt --method-b tent_im_lam1 --cycle 0` (same for `tent_im_sgd_lam1`): TBD.
+- In cycle 0 the lam = 1 arms (0.198 Adam, 0.196 SGD) are below BN-adapt (0.226). Paired per-seed differences are in the table above (3 of 3 seeds, mean about -0.03).
 - Why a balanced marginal can be wrong (hypothesis): the objective E[H(p)] - lam H(p_bar) never sees labels; any confident AND balanced labelling is a minimiser, correct or not.
 
 ```bash

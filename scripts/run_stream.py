@@ -71,6 +71,7 @@ def run_one(cfg: dict, method: str, seed: int, base_model: torch.nn.Module, mode
     err_sum: dict[int, float] = {}
     cnt: dict[int, int] = {}
     topfrac_by_cycle: dict[int, list[float]] = {}
+    conf_by_cycle: dict[int, np.ndarray] = {}       # per-cycle confusion matrix [true, predicted]: tells WHY error is high at a balanced marginal
     max_top, last_h_ema, last_h_batch, diverged_step = 0.0, float("nan"), float("nan"), None
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats()
@@ -88,6 +89,8 @@ def run_one(cfg: dict, method: str, seed: int, base_model: torch.nn.Module, mode
                 log.warning("non-finite logits at step %d: stopping this run", batch.step)
                 break
             m, pbar = batch_metrics(lg, batch.y)
+            cm = conf_by_cycle.setdefault(batch.cycle, np.zeros((lg.shape[1], lg.shape[1]), dtype=np.int64))
+            np.add.at(cm, (np.asarray(batch.y, dtype=np.int64), lg.argmax(1)), 1)
             h_ema = ema.update(pbar)
             det.update(batch.step, m["top_frac"])
             now = time.perf_counter()                     # .cpu() above already synchronised the GPU
@@ -129,6 +132,8 @@ def run_one(cfg: dict, method: str, seed: int, base_model: torch.nn.Module, mode
             "model": model_info, "torch": torch.__version__, "cuda": torch.version.cuda, "git_commit": git_commit(),
         }
         rl.write_summary(summary)
+        if conf_by_cycle:
+            np.save(run_dir / "confusion_by_cycle.npy", np.stack([conf_by_cycle[c] for c in sorted(conf_by_cycle)]))   # [cycle, true, pred]
     log.info("done: overall_err=%.4f last_cycle_err=%s collapsed=%s start=%s", summary["overall_err"],
              summary["err_last_cycle"], summary["collapsed"], summary["time_to_collapse_start"])
     return summary

@@ -1,0 +1,34 @@
+# Phase 4 CONTROL: is the benefit of a short reset period caused by resets landing exactly on corruption boundaries?
+# Every T in the grid (250, 500, 1000, 2000) is a multiple of 50 = batches per corruption, so resets happen right before a new corruption starts
+# (a known domain change; a deployed system would not know it). reset_offset = 25 moves every reset to the MIDDLE of a corruption segment
+# (resets before batches 225, 475, 725, ...). Same method, same T, same seed, same batches: only the phase of the schedule differs.
+# PREDICTIONS (written before running):
+#   P1 (alignment matters): rdumb_T250_off25 is clearly worse than rdumb_T250 and closer to rdumb_T500 / T1000 / BN-adapt.
+#   P2 (short horizon matters): rdumb_T250_off25 is about as good as rdumb_T250 (difference within ~0.01).
+# Seed 0 first (sev-5, 22 min); take 3 seeds only if the difference is larger than ~0.01.
+# Run:  python scripts/run_stream.py --config configs/stream_reset_control.yaml
+experiment:
+  name: stream_tent
+  seeds: [0]
+  skip_existing: true
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 15
+  severity: 5
+  num_cycles: 10
+  shuffle: true
+  max_steps: null
+
+methods: [rdumb_T250_off25]
+tta:
+  rdumb_T250_off25: {kind: tent, optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], lam: 0.0, weight_decay: 0.0, steps: 1, reset_every: 250, reset_offset: 25}

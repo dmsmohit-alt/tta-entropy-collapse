@@ -1,0 +1,10 @@
+method,tta,layout,config_hash,onset_vs_bn_adapt,sustained_vs_bn_adapt,n_degraded_vs_bn_adapt,final_excess_vs_bn_adapt,per_seed_onset_vs_bn_adapt,cycles_judged_vs_bn_adapt,n_seeds_vs_bn_adapt,onset_vs_bn_adapt_delta0.0,onset_vs_bn_adapt_delta0.01,onset_vs_bn_adapt_delta0.02,onset_vs_bn_adapt_delta0.05,onset_vs_source,sustained_vs_source,n_degraded_vs_source,final_excess_vs_source,per_seed_onset_vs_source,cycles_judged_vs_source,n_seeds_vs_source
+rdumb_T1000,opt=adam lr=0.001 lam=0.0 T=1000,nchw,8071ba00,2.0,False,1,-0.01,[2],10,1,2.0,2.0,2.0,,,,0,-0.1153,[None],10,1
+rdumb_T2000,opt=adam lr=0.001 lam=0.0 T=2000,nchw,1b5019a5,1.0,False,7,0.0172,[1],10,1,1.0,1.0,1.0,1.0,,,0,-0.088,[None],10,1
+rdumb_T250,opt=adam lr=0.001 lam=0.0 T=250,nchw,33428d78,,,0,-0.015,[None],10,1,,,,,,,0,-0.1203,[None],10,1
+rdumb_T500,opt=adam lr=0.001 lam=0.0 T=500,nchw,a2095e0f,,,0,-0.0143,[None],10,1,7.0,,,,,,0,-0.1196,[None],10,1
+tent,opt=adam lr=0.001 lam=0.0,nchw,e12af15d,1.0,True,9,0.4969,[1],10,1,1.0,1.0,1.0,1.0,2.0,True,8,0.3916,[2],10,1
+tent_im_lam0p1,opt=adam lr=0.001 lam=0.1,nchw,f2e66ed9,2.0,True,8,0.0579,[2],10,1,1.0,2.0,5.0,8.0,,,0,-0.0474,[None],10,1
+tent_im_lam0p5,opt=adam lr=0.001 lam=0.5,nchw,35a01df3,3.0,True,7,0.0759,[3],10,1,2.0,3.0,4.0,7.0,,,0,-0.0293,[None],10,1
+tent_im_lam1,opt=adam lr=0.001 lam=1,nchw,287b9ee1,3.0,True,7,0.073,[3],10,1,2.0,3.0,4.0,7.0,,,0,-0.0323,[None],10,1
+tent_im_lam2,opt=adam lr=0.001 lam=2,nchw,4207b859,3.0,True,7,0.0908,[3],10,1,2.0,3.0,3.0,5.0,,,0,-0.0144,[None],10,1

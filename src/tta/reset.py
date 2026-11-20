@@ -18,17 +18,20 @@ from src.tta.base import TTAMethod
 class PeriodicReset(TTAMethod):
     name = "periodic_reset"
 
-    def __init__(self, inner: TTAMethod, period: int) -> None:
+    def __init__(self, inner: TTAMethod, period: int, offset: int = 0) -> None:
         if period < 1:
             raise ValueError(f"reset period must be >= 1, got {period}")
+        if not 0 <= offset < period:
+            raise ValueError(f"offset must be in [0, period), got {offset}")
         super().__init__(inner.model)
         self.inner = inner
         self.period = int(period)
+        self.offset = int(offset)   # 0 = resets at t = T, 2T, ...; offset o shifts them to t = T-o, 2T-o, ... (control for domain-boundary alignment)
         self.t = 0                 # number of batches seen so far
         self.n_resets = 0
 
     def forward(self, x: Tensor) -> Tensor:
-        if self.t > 0 and self.t % self.period == 0:
+        if self.t > 0 and (self.t + self.offset) % self.period == 0:
             self.inner.reset()
             self.n_resets += 1
         self.t += 1

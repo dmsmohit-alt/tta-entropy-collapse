@@ -15,7 +15,7 @@ def build_method(name: str, model, tta_cfg: dict):
     `name` is just a label (it names the results folder); the algorithm is `tta_cfg["kind"]`, default = `name`.
     kind "tent" accepts:
       lam         (default 0)   0 = plain entropy (TENT); >0 = entropy - lam * H(p_bar)  ("TENT + marginal entropy")
-      reset_every (default None) int T -> wrap in PeriodicReset (RDumb-style baseline)
+      reset_every (default None) int T -> wrap in PeriodicReset (RDumb-style baseline); reset_offset (default 0) shifts the schedule
       optimizer adam|sgd, lr (REQUIRED, no silent default for sgd), betas, momentum, weight_decay, steps
     """
     kind = tta_cfg.get("kind", name)
@@ -35,5 +35,5 @@ def build_method(name: str, model, tta_cfg: dict):
                       optimizer=optimizer, momentum=float(tta_cfg.get("momentum", 0.0)),
                       loss_fn=partial(info_max_loss, lam=lam) if lam != 0.0 else None)  # lam=0 -> exactly Phase 3's TENT
         period = tta_cfg.get("reset_every")
-        return PeriodicReset(method, int(period)) if period else method
+        return PeriodicReset(method, int(period), int(tta_cfg.get("reset_offset", 0))) if period else method
     raise ValueError(f"Unknown method kind {kind!r} (have: source, bn_adapt, tent)")
