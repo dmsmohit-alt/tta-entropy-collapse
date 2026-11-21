@@ -1,0 +1,37 @@
+# Phase 5: T = 350, a reset period whose s-profile CAN be separated from corruption identity (design-check: 1 block; T = 250/500/1000/2000 have 5).
+# Why: the horizon of plain TENT (steps of adaptation after which it is worse than BN-adapt) is only known confounded with corruption (~250-275 steps) and, from the
+# off25 run (seed 0, additive model), ~210. T = 350 gives 3 seeds, 14 s-bins of 25, each corruption at 7 different window positions (a much better connected design
+# than off25) and reaches past the break-even. T = 550 (22 bins) is defined below for a longer reach; not in the default list.
+# PREDICTIONS (written before running):
+#   P1: overall error of rdumb_T350 lies between T250 (0.2033) and T500 (0.2300), linear interpolation 0.214; accepted range [0.205, 0.230].
+#   P2: corruption-adjusted profile (error_vs_steps_since_reset.py --decompose, 3 seeds): zero crossing between s = 175 and 250 in each seed; excess > 0 for s >= 250.
+#   P3: peak benefit (most negative bin) between s = 75 and 150, value about -0.04.
+#   FALSIFIED by: zero crossing beyond s = 300, or no common zero-crossing region across seeds (then the horizon is seed/stream dependent).
+# Cost: 3 runs x ~22 min = ~66 min.   Run:  python scripts/run_stream.py --config configs/stream_t350.yaml
+#   then:  python scripts/error_vs_steps_since_reset.py --exp-dir results/stream_tent --methods rdumb_T350 --ref bn_adapt --bin 25 --decompose
+experiment:
+  name: stream_tent
+  seeds: [0, 1, 2]
+  skip_existing: true
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 15
+  severity: 5
+  num_cycles: 10
+  shuffle: true
+  max_steps: null
+
+methods: [rdumb_T350]
+tta:
+  rdumb_T350: {kind: tent, optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], lam: 0.0, weight_decay: 0.0, steps: 1, reset_every: 350}
+  rdumb_T550: {kind: tent, optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], lam: 0.0, weight_decay: 0.0, steps: 1, reset_every: 550}

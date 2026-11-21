@@ -1,0 +1,42 @@
+# Phase 5 FACTORIAL: marginal term (lam) x reset period (T), severity 5, seeds 0-2, Adam lr 1e-3, same batches for every cell.
+# Cells (overall error, 3-seed means already measured unless marked NEW):   T = inf        T = 1000      T = 250
+#                                                                 lam = 0:   0.6895        0.2862        0.2033
+#                                                                 lam = 1:   0.2632        NEW           NEW
+# BN-adapt reference: 0.2256.  lam = 1 and T in {250, 1000} are the a-priori / selected values (no new tuning).
+# PREDICTIONS (written BEFORE running; commit this file first, the commit is the time stamp):
+#   P1 (lam=1, T=1000): overall error in [0.195, 0.215]; paired excess vs BN-adapt negative in 3 of 3 seeds, mean in [-0.03, -0.01].
+#      Basis: lam=1 without resets has cycle-mean excess vs BN-adapt of -0.0283 (cycle 0) and -0.0111 (cycle 1); a 1000-step window after a reset then has
+#      mean excess about (750*-0.0283 + 250*-0.0111)/1000 = -0.0240, i.e. 0.2256 - 0.0240 = 0.2016. Assumptions: the profile after a reset equals the profile
+#      from the source start, and steps 750-999 behave like the cycle-1 mean (rough). FALSIFIED if the mean excess is >= 0 or negative in <= 1 seed:
+#      then the fresh-start profile does not transfer to reset windows. (Plain T=1000 is +0.0606 vs BN-adapt: the claim is that the marginal term removes it.)
+#   P2 (lam=1, T=250): overall error <= 0.2083, i.e. not more than 0.005 worse than plain T=250 (0.2033). Weak: no derivation, the cycle-level profile cannot resolve 250 steps.
+#   P3 (interaction): [0.2862 - (lam=1,T=1000)] - [0.2033 - (lam=1,T=250)] >= 0.05: the marginal term matters far more in long windows than in short ones.
+#   P4: no marginal collapse (top_frac rule) in any run; no degradation onset (delta 0.01 vs BN-adapt) in either cell.
+# These runs also write confusion_by_cycle.npy (confusion matrix per cycle).
+# Cost: 6 runs x ~22 min = ~2.2 h.   Run:  python scripts/run_stream.py --config configs/stream_factorial.yaml
+experiment:
+  name: stream_tent
+  seeds: [0, 1, 2]
+  skip_existing: true
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 15
+  severity: 5
+  num_cycles: 10
+  shuffle: true
+  max_steps: null
+
+methods: [tent_im_lam1_T1000, tent_im_lam1_T250]
+tta:
+  tent_im_lam1_T1000: {kind: tent, optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], lam: 1.0, weight_decay: 0.0, steps: 1, reset_every: 1000}
+  tent_im_lam1_T250: {kind: tent, optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], lam: 1.0, weight_decay: 0.0, steps: 1, reset_every: 250}
