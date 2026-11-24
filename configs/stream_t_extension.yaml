@@ -7,6 +7,12 @@
 #   P2: error versus T is U-shaped: T = 50 is worse than T = 100/150 (adaptation needs some steps to pay off).
 #   If neither holds, the severity-5 profile does not transfer and T = 250 stays our best known value (still only a grid-edge value, not 'optimal').
 # Whatever is found, the main table keeps T = 250 as the SELECTED value (selection rule already applied); these are reported as extra, post-hoc points.
+# ADDENDUM 2026-11-24 (written AFTER the severity-5 T=350 profile and the sev-3 break-even result; P1/P2 above are unchanged and still the pre-registered ones):
+#   The severity-5 profile has its peak benefit on a plateau at s = 25-75 (not at 75-150 as P1/P2's basis said) and a zero crossing at s = 200-225 (sev-5).
+#   On severity 3 the horizon is longer (user-reported break-even 500-750 versus ~250 on sev-5), so the sev-5 window means (best T about 75-150) do NOT carry over.
+#   P3 (informed, not blind): on severity 3, T = 100 and T = 150 are NOT better than T = 250 by more than 0.003 (sev-3 profile is flatter/longer, T = 250 stays near the best);
+#   P1 above (T = 150 <= 0.1417 + 0.003) is kept as written and may well hold under this; P2 (T = 50 worse than T = 100/150) is kept.
+#   A pass of P3 would show the best T depends on severity; a clear win of T = 100/150 (> 0.003) would show the sev-5 profile transfers. Both are one stream (seed 100): hypothesis-level.
 # Cost: 3 x ~22 min. Run:  python scripts/run_stream.py --config configs/stream_t_extension.yaml
 experiment:
   name: select_sev3

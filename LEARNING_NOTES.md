@@ -235,3 +235,9 @@ running mean of excess over a window (its minimum is where a reset period would 
 
 - Does the toy stability picture (negative curvature at low margin, `lam > lam_c` fixes it) show up in a real network? (Phases 3-5)
 - What is the right curvature / learning-rate scale for BatchNorm parameters in a real network? (Phase 4)
+
+## Phase 5a: predicting a window mean from an additive profile
+- The mean over the s-profile is only the right window mean if the anchoring constant is the one that makes the corruption effects average to zero over the stream; the window mean (alpha_mean + mean beta) is invariant to the constant because every stream step lies in exactly one window. Checked: 14-bin mean -0.0083 vs overall -0.0087.
+- Interaction (corruption x s) does not cancel for T whose corruption coverage per s-bin is non-uniform (T=150: 3 blocks; T=250: 5 blocks); it does for T=100. Simulation (sigma 0.02 per cell): error SD ~0.001 (T=100), ~0.003 (T=150/250). The T=250 miss 0.0024 is of that size.
+- A plateau is not an optimum: window means for T = 75..150 differ by <= 0.002, which the data cannot rank. My earlier pre-registered peak (75-150) was wrong; the peak sits at 25-75.
+- Predictions made after seeing a profile fitted on the same seeds are in-sample for the batches: they test transfer across T, not across streams (optional replication on seeds 3-5).

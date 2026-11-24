@@ -10,7 +10,13 @@
 #      from the source start, and steps 750-999 behave like the cycle-1 mean (rough). FALSIFIED if the mean excess is >= 0 or negative in <= 1 seed:
 #      then the fresh-start profile does not transfer to reset windows. (Plain T=1000 is +0.0606 vs BN-adapt: the claim is that the marginal term removes it.)
 #   P2 (lam=1, T=250): overall error <= 0.2083, i.e. not more than 0.005 worse than plain T=250 (0.2033). Weak: no derivation, the cycle-level profile cannot resolve 250 steps.
-#   P3 (interaction): [0.2862 - (lam=1,T=1000)] - [0.2033 - (lam=1,T=250)] >= 0.05: the marginal term matters far more in long windows than in short ones.
+#   P3 (interaction, UPDATED 2026-11-24 before any factorial run; the original wording had the same formula): define effect(T) = err(lam=0, T) - err(lam=1, T), computed per seed
+#      (same batches) and then averaged over the 3 seeds. P3: effect(1000) - effect(250) >= 0.05.
+#      Components implied by P1/P2: effect(1000) = 0.2862 - [0.195, 0.215] = [0.071, 0.091] (centre 0.085); effect(250) = 0.2033 - err(lam=1,T250) >= -0.005 (P2).
+#      So P3 expected about 0.08-0.09 if P1 and P2 hold; it fails if effect(1000) < 0.05 + effect(250): the marginal term would then NOT matter more in long windows.
+#      The lam=0 cells use the existing runs (seeds 0-2) and are paired with compare_runs_paired.py; no new lam=0 run is needed.
+#      Context (T=350 profile, plain TENT): the first ~200 steps after a reset gain about -0.03 vs BN-adapt, so a 250-step window is mostly inside the beneficial horizon;
+#      effect(250) near 0 is therefore the natural expectation, effect(1000) large (T=1000 plain is +0.0606 vs BN-adapt).
 #   P4: no marginal collapse (top_frac rule) in any run; no degradation onset (delta 0.01 vs BN-adapt) in either cell.
 # These runs also write confusion_by_cycle.npy (confusion matrix per cycle).
 # Cost: 6 runs x ~22 min = ~2.2 h.   Run:  python scripts/run_stream.py --config configs/stream_factorial.yaml

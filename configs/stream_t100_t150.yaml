@@ -1,0 +1,53 @@
+# Phase 5: T = 100 and T = 150 on the severity-5 streams (seeds 0-2, same batches as bn_adapt / rdumb_T250 / rdumb_T350 already in results/stream_tent).
+# WHERE THE PREDICTIONS COME FROM (2026-11-24, AFTER seeing the T = 350 profile; they are model-based predictions, not blind):
+#   corruption-adjusted s-profile from rdumb_T350 (3 seeds pooled, bins of 25, diff vs BN-adapt), bins s = 0..325:
+#   -0.0178 -0.0374 -0.0297 -0.0358 -0.0251 -0.0252 -0.0151 -0.0150 +0.0002 +0.0005 +0.0131 +0.0163 +0.0257 +0.0287
+#   Window mean for period T = mean of the first T/25 bins (every stream step lies in exactly one window, equal weight per corruption, so the anchoring
+#   of the additive fit cancels): T=75 -0.0283, T=100 -0.0302, T=125 -0.0292, T=150 -0.0285, T=200 -0.0251, T=250 -0.0200 (measured -0.0224).
+#   BN-adapt overall = 0.2256  ->  T=100: 0.1954,  T=150: 0.1971.
+# ASSUMPTIONS (each can fail): (a) the profile after a reset does not depend on T (state after a reset is the source state: true by construction) and has no
+#   corruption x s interaction; (b) the batches of seeds 0-2 are the SAME as those the profile was fitted on, so this tests transfer across T, not across streams.
+#   Simulation (additive fit on T=350 geometry, random interaction of SD sigma per cell): the interaction error of the window-mean prediction has SD about
+#   0.0008-0.001 for T=100 and 0.003 for T=150 / 250 at sigma = 0.02 (T=100 covers all corruptions uniformly at every s; T=150 does not, 3 blocks).
+#   The T=250 prediction missed by 0.0024 (in-sample).  Accepted ranges below use about +-0.005 (T=100) and +-0.007 (T=150).
+# PREDICTIONS:
+#   P1: rdumb_T100 overall error in [0.190, 0.201] (centre 0.1954); rdumb_T150 overall error in [0.190, 0.204] (centre 0.1971).
+#   P2: both beat BN-adapt (0.2256) in 3 of 3 seeds (paired); mean excess about -0.030 / -0.028.
+#   P3: both beat rdumb_T250 (0.2033) on the 3-seed mean; expected gap -0.0079 (T=100) and -0.0062 (T=150), per-seed gaps not required to be 3/3 (T250 seed spread 0.0023).
+#   NO PREDICTION on the order of T=75..150: their window means differ by <= 0.002, below the resolution (this is a plateau, not an optimum at 100).
+#   FALSIFIED if: either T has overall error >= 0.2033 (mean) -> the fresh-start profile does not transfer to shorter windows; or the error lies outside the
+#   accepted range by more than 0.01 -> the additive / no-interaction model is wrong.
+#   Reset frequency also has a cost not seen in the profile if it exists (e.g. Adam warm-up repeated every T steps); it would show up as a miss in the SAME direction for both.
+# Cost: 6 runs x ~22 min = ~2.2 h.  Run:   python scripts/run_stream.py --config configs/stream_t100_t150.yaml
+# Then:  python scripts/aggregate_runs.py ...   and per seed:
+#   python scripts/compare_runs_paired.py --exp-dir results/stream_tent --method-a rdumb_T250 --method-b rdumb_T100
+#   python scripts/compare_runs_paired.py --exp-dir results/stream_tent --method-a bn_adapt   --method-b rdumb_T100   (same for T150)
+# Optional replication on NEW streams (tests transfer across streams; ~3.8 h): 
+#   python scripts/run_stream.py --config configs/stream_t100_t150.yaml methods=[bn_adapt,rdumb_T250,rdumb_T100,rdumb_T150] experiment.seeds=[3,4,5]
+experiment:
+  name: stream_tent
+  seeds: [0, 1, 2]
+  skip_existing: true
+
+data:
+  root: data_cache/CIFAR-10-C
+
+model:
+  source: checkpoint
+  checkpoint: checkpoints/resnet18_cifar10_seed0.pt
+  name: null
+  models_dir: models
+
+stream:
+  batch_size: 200
+  num_corruptions: 15
+  severity: 5
+  num_cycles: 10
+  shuffle: true
+  max_steps: null
+
+methods: [rdumb_T100, rdumb_T150]
+tta:
+  rdumb_T100: {kind: tent, optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], lam: 0.0, weight_decay: 0.0, steps: 1, reset_every: 100}
+  rdumb_T150: {kind: tent, optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], lam: 0.0, weight_decay: 0.0, steps: 1, reset_every: 150}
+  rdumb_T250: {kind: tent, optimizer: adam, lr: 1.0e-3, betas: [0.9, 0.999], lam: 0.0, weight_decay: 0.0, steps: 1, reset_every: 250}
