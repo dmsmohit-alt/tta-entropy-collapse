@@ -1,0 +1,19 @@
+{
+  "continue_factor": 4,
+  "dh_tol": 0.001,
+  "eps": 0.01,
+  "grad_loose": 0.0001,
+  "intermediate_definition": "tau*logK <= H_bar(S) <= 0.9*logK",
+  "intermediate_max_W_norm_growth": 1.5560335844376827,
+  "intermediate_max_abs_dH_bar": 0.003052658156096788,
+  "intermediate_max_dist_perturbed_vs_unperturbed": 0.008658139540811216,
+  "intermediate_max_grad_norm": 0.001972041072507931,
+  "intermediate_max_param_drift": 15.66242244237368,
+  "intermediate_max_pred_change": 0.002,
+  "intermediate_stationary": 0,
+  "n_collapsed": 3,
+  "n_intermediate": 14,
+  "n_perturbations": 3,
+  "n_states": 75,
+  "pred_tol": 0.005
+}
