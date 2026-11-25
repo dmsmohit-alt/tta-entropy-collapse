@@ -68,7 +68,7 @@ Status of each statement (see THEORY.md in Phase 2 for derivations):
 - **[observed]** With W also adapted (sep=3), no seed collapsed until delta=10.8, the
   last grid point (all 3 collapsed there); at intermediate delta the final H(p_bar)
   is between 0 and log K (fig2). Whether those intermediate states are true fixed
-  points was only spot-checked informally, not logged: **TBD**.
+  points was only spot-checked informally, not logged: **TBD**; `scripts/spotcheck_wb_fixed_points.py` logs it (run: `experiment.name=toy_wb_spotcheck`), results to be added from that run.
 - **Hypothesis (untested):** for sep <= 2 the balanced point is itself unstable under
   entropy minimisation. Phase 2 (Jacobian) will test this.
 - Caveats: only 3 seeds; non-collapsed runs often hit the step budget before
