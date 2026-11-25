@@ -3,7 +3,7 @@
 A dynamical analysis of test-time entropy minimisation (TENT) and a stable
 marginal-entropy correction for continual shift.
 
-**Status: Phases 0-3 done (scaffold, toy model, theory/stability, real-network baselines on CIFAR-10-C). Phase 4 (TENT + marginal entropy, RDumb-style reset, SGD arm): experiments run on the user's machine, analysis in progress, approved 2026-11-21. Phase 5 plan: `PHASE5_PLAN.md`.**
+**Status: Phases 0-3 done (scaffold, toy model, theory/stability, real-network baselines on CIFAR-10-C). Phase 4 approved 2026-11-21. Phase 5 in progress (pre-registered factorial, T = 350 / 100 / 150 and the Phase 1 W+b spot-check are done, see `Phase 5` below; confusion matrices, lambda threshold, severity contrast, T extension and ablations are TBD). Plan: `PHASE5_PLAN.md`.**
 Every number below comes from a saved run (config + CSV in `results/`); anything else is `TBD`.
 
 ## Setup
@@ -68,7 +68,7 @@ Status of each statement (see THEORY.md in Phase 2 for derivations):
 - **[observed]** With W also adapted (sep=3), no seed collapsed until delta=10.8, the
   last grid point (all 3 collapsed there); at intermediate delta the final H(p_bar)
   is between 0 and log K (fig2). Whether those intermediate states are true fixed
-  points was only spot-checked informally, not logged: **TBD**; `scripts/spotcheck_wb_fixed_points.py` logs it (run: `experiment.name=toy_wb_spotcheck`), results to be added from that run.
+  points: now logged by `scripts/spotcheck_wb_fixed_points.py` (run `toy_wb_spotcheck/c94b4610`, 3 seeds x 25 deltas = 75 states; user-reported). **They are not exact fixed points**; see the Phase 5 spot-check row.
 - **Hypothesis (untested):** for sep <= 2 the balanced point is itself unstable under
   entropy minimisation. Phase 2 (Jacobian) will test this.
 - Caveats: only 3 seeds; non-collapsed runs often hit the step budget before
@@ -151,9 +151,9 @@ Notes: the stream order depends on the seed only, so all methods see identical b
 trained checkpoint, so seed std reflects stream order, not source-training variance (a limitation).
 
 Caveats for the Phase 3 numbers: collapse is defined by our own rule (assumption); one source checkpoint, so std is stream-order
-only; TENT is layout-sensitive (above), and the layout study (3 seeds, 1 cycle) found no detectable layout effect at n = 3 (see above); the user reports `pytest -q`: 98 passed (2026-11-20, latest report; skipped count not stated; the count grew 81 -> 83 -> 88 -> 98 as tests were added; not seen by the author).
+only; TENT is layout-sensitive (above), and the layout study (3 seeds, 1 cycle) found no detectable layout effect at n = 3 (see above); the user reports `pytest -q` in the project `.venv`: 104 passed, no skipped reported (2026-11-25; earlier 81 -> 83 -> 88 -> 98 as tests were added; the author's sandbox has no torch and runs 66 passed, 6 skipped).
 
-### Phase 4: TENT + marginal entropy, RDumb-style reset, SGD arm - code only, NO results yet
+### Phase 4: TENT + marginal entropy, RDumb-style reset, SGD arm (results run on the user's machine, user-reported)
 
 Methods (all via `tta.<name>` in the configs; `kind: tent` with options):
 - `lam > 0`: loss = E[H(p)] - lam * H(p_bar) on the batch ("TENT + marginal entropy", SHOT-style information maximisation). `lam = 0` is bit-identical to Phase 3's TENT (test).
@@ -225,6 +225,53 @@ python scripts/compare_runs_paired.py --exp-dir results/stream_tent --method-a b
 
 Limitations of the curvature estimate: one batch per segment, at the source weights only, power iteration (see `--n-iter`, `converged_*` columns); the Hessian along the adapted trajectory may differ.
 The batch-marginal term assumes roughly class-balanced batches; on a class-imbalanced stream it may push the wrong way (ablation planned in Phase 5).
+
+## Phase 5 (user-reported results, 2026-11-25; every number from `results/stream_tent/aggregate.csv`, `degradation.csv`, `compare_runs_paired.py` and `factorial_effects.py` output; 3 seeds, one source checkpoint, severity 5, Adam lr 1e-3, same streams for all methods)
+
+Pre-registered predictions are in the configs (committed before the runs: `b7215f7`, `19aab97`). Results of the runs: commit `4b362aa`.
+
+| Method (3 seeds, mean +/- std) | overall error | last-cycle error | overall minus BN-adapt |
+|---|---|---|---|
+| Source | 0.4473 | 0.4473 | |
+| BN-adapt | 0.2256 +/- 0.0001 | 0.2255 | 0 |
+| rdumb_T100 (lam 0) | 0.1958 +/- 0.0002 | 0.1941 +/- 0.0015 | -0.0298 (3/3 seeds better) |
+| rdumb_T150 (lam 0) | 0.1941 +/- 0.0006 | 0.1949 +/- 0.0014 | -0.0315 (3/3) |
+| rdumb_T250 (lam 0, selected T) | 0.2033 +/- 0.0023 | 0.2073 +/- 0.0039 | -0.0223 |
+| rdumb_T350 (lam 0) | 0.2169 +/- 0.0026 | 0.2142 +/- 0.0036 | -0.0087 |
+| rdumb_T500 (lam 0) | 0.2300 +/- 0.0057 | 0.2298 +/- 0.0113 | +0.0044 |
+| rdumb_T1000 (lam 0) | 0.2862 +/- 0.0048 | 0.2539 +/- 0.0120 | +0.0606 |
+| tent_im_lam1 (no reset) | 0.2632 +/- 0.0169 | 0.3274 +/- 0.0266 | +0.0376 |
+| **tent_im_lam1_T250** (lam 1, T 250: the a-priori / selected values) | **0.1876 +/- 0.0002** | 0.1877 +/- 0.0017 | -0.0380 |
+| tent_im_lam1_T1000 (lam 1, T 1000) | 0.1979 +/- 0.0005 | 0.1933 +/- 0.0022 | -0.0277 |
+
+Factorial (overall error, seed-paired, `scripts/factorial_effects.py`): effect(T) = err(lam 0, T) - err(lam 1, T), positive = the marginal term helps.
+effect(1000) = +0.0859 / +0.0856 / +0.0936 (mean +0.0884, std 0.0045); effect(250) = +0.0132 / +0.0160 / +0.0178 (mean +0.0156, std 0.0023);
+interaction effect(1000) - effect(250) = +0.0728 / +0.0696 / +0.0758 (mean +0.0727, std 0.0031). n = 3 seeds, no p-value.
+
+Verdicts against the pre-registered predictions (criteria as written in the configs):
+
+| Prediction | Result |
+|---|---|
+| Factorial P1: (lam 1, T 1000) overall in [0.195, 0.215], better than BN-adapt in 3/3 seeds, mean excess in [-0.03, -0.01] | **pass**: 0.1979 (predicted centre 0.2016, better by 0.0037); excess about -0.0277 |
+| Factorial P2: (lam 1, T 250) <= 0.2083 | **pass**: 0.1876 |
+| Factorial P3: interaction >= 0.05 | **pass**: +0.0727 (effect(1000) +0.0884, inside the implied [0.071, 0.091]) |
+| Factorial P4: no marginal collapse, no degradation onset (delta 0.01 vs BN-adapt) in either cell | **pass**: 0/3 collapsed, onset never, last-cycle excess -0.0322 (T 1000) / -0.0378 (T 250), max top-class fraction about 0.19 |
+| My side note in P3: effect(250) 'near 0' | **wrong**: +0.0156, positive in 3/3 seeds; the marginal term helps in short windows too |
+| T 350 P1: overall between T250 and T500, accepted [0.205, 0.230] | **pass**: 0.2169 |
+| T 350 P2: zero crossing of the corruption-adjusted profile between s 175 and 250 | **pass** (per-seed lasting break-even bins 200 / 225 / 225) |
+| T 350 P3: peak benefit between s 75 and 150 | **fail**: plateau at s 25-75 |
+| T 100 / 150 P1: overall in [0.190, 0.201] / [0.190, 0.204] | **pass**: 0.1958 / 0.1941 (T 150 missed its centre 0.1971 by 0.0030, on the better side; a simulated interaction error for T 150 is of that size) |
+| T 100 / 150 P2: better than BN-adapt in 3/3 seeds | **pass**: -0.0297 / -0.0300 / -0.0297 and -0.0311 / -0.0322 / -0.0312 |
+| T 100 / 150 P3: better than T 250 on the mean (predicted gaps -0.0079 / -0.0062) | **pass**: -0.0075 (3/3 seeds) / -0.0091 (3/3 seeds) |
+
+Reading (hypothesis level; one checkpoint, one severity; the profile and the checks use the same streams, so this tests transfer across T, not across streams or checkpoints):
+- Reset period: T = 75-150 is a plateau (profile window means -0.0283 / -0.0302 / -0.0285). T 150 is observed slightly better than T 100 (per-seed gaps +0.0014, +0.0022, +0.0015 computed from the per-seed values), the opposite order to the profile; this is below the profile's resolution, so we do NOT claim an optimum T. T 100 / 150 are post-hoc extra points on the severity-5 test streams; the selected T stays 250 (rule applied on severity 3).
+- The marginal term helps at every window length measured and more so in long windows (interaction +0.0727). With it T 1000 no longer degrades (0.1979 vs 0.2862), and (lam 1, T 250) has the lowest overall error measured (0.1876), also below plain T 100 / 150.
+- Without resets the lam = 1 run still degrades (0.2632, onset cycle 3 of 10), so the two mechanisms are complementary here: the marginal term acts against marginal collapse and slows degradation, resets remove the accumulated drift.
+
+**Phase 1 W+b spot-check** (`scripts/spotcheck_wb_fixed_points.py`, run `toy_wb_spotcheck/c94b4610`; toy sep 3; 3 seeds x 25 deltas = 75 states; user-reported): 14 intermediate states (tau log K <= H(p_bar) <= 0.9 log K, delta/margin 0.95-1.15) and 3 collapsed states (the delta = 10.8 point, as in the sweep). **None of the 14 passes the stationarity criterion fixed beforehand** (grad norm < 1e-4, |dH(p_bar)| < 1e-3 and prediction change < 0.5% over a continuation of 4 x the budget): gradient norm at the end of the sweep budget is 1.2e-3 to 2.0e-3 (max 0.00197); H(p_bar) still moves by up to 0.0031 in the continuation; predictions change in at most 0.2% of samples; ||W|| grows by up to 1.56x (for example 23.1 to 35.6). Perturbations of norm 0.01 (3 random directions) end 0.0046-0.0087 from the unperturbed continuation, i.e. they do not grow. No intermediate state collapsed during the 4x continuation. Reading: slowly drifting quasi-stationary states (weights keep growing while predictions and H(p_bar) are nearly frozen), not exact fixed points. The sweep's 'no collapse before delta = 10.8' holds at the finite budget plus a 4x continuation, not as a proof for t to infinity. Thresholds and the 'intermediate' band are our choices (stored in summary.json).
+
+Still TBD: confusion matrices (`confusion_rerun`), lambda threshold (0.01 / 0.03), severity-3 contrast, T extension on severity 3 (`stream_t_extension.yaml`), seeds 3-5 replication (new stream order only: same images, same checkpoint), ablations, per-segment eta* test.
 
 ## Limitations (to be expanded in Phase 7)
 

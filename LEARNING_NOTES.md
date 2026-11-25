@@ -241,3 +241,9 @@ running mean of excess over a window (its minimum is where a reset period would 
 - Interaction (corruption x s) does not cancel for T whose corruption coverage per s-bin is non-uniform (T=150: 3 blocks; T=250: 5 blocks); it does for T=100. Simulation (sigma 0.02 per cell): error SD ~0.001 (T=100), ~0.003 (T=150/250). The T=250 miss 0.0024 is of that size.
 - A plateau is not an optimum: window means for T = 75..150 differ by <= 0.002, which the data cannot rank. My earlier pre-registered peak (75-150) was wrong; the peak sits at 25-75.
 - Predictions made after seeing a profile fitted on the same seeds are in-sample for the batches: they test transfer across T, not across streams (optional replication on seeds 3-5).
+
+## Phase 5b: what the factorial and the spot-check taught
+- I expected effect(250) (benefit of the marginal term at a 250-step window) to be about 0 because a window of 250 steps lies inside the beneficial horizon of plain TENT. It was +0.0156 in 3/3 seeds. A pre-registered side note that is wrong is reported as wrong; the formally registered P2 still passed, which is why the wording of a falsifier matters more than the surrounding story.
+- Window-mean predictions from a corruption-adjusted profile landed within the simulated error (T 100: 0.0004 off; T 150: 0.0030 off; T 250: 0.0024 off). The ranking inside the 75-150 plateau went the other way. A plateau is not an optimum.
+- Toy W+b sweep: 'H(p_bar) flat and gradient small' is not 'fixed point' when W is trainable: ||W|| keeps growing (logit scale) while predictions freeze. A criterion that mixes gradient norm, H(p_bar) drift and prediction change separates these cases; raw parameter drift does not.
+- Tooling: on Windows the system `python` had no pandas; the project `.venv` has. Run analysis scripts with `.\.venv\Scripts\python.exe` (or activate it). A script that fails on import writes no result file, so a missing result folder can mean 'never ran'.

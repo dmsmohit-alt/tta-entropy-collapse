@@ -3,6 +3,10 @@
 Status labels: **pre-registered** = predictions are written in the config before the run; **no GPU** = CPU analysis of runs that already exist.
 Costs assume ~22 min per 7500-step Adam/SGD run on the RTX 2050 (BN-adapt ~10 min); Colab T4 timings differ.
 
+## Status 2026-11-25
+Done (user-reported, see README `Phase 5`): factorial (3 seeds, P1-P4 pass, my effect(250) note wrong), T = 350, T = 100 / 150 (all pre-registered checks pass except the T = 350 peak location), Phase 1 W+b spot-check (intermediate states are not exact fixed points).
+Next (GPU, laptop): confusion reruns (~45 min), lambda threshold (~45 min), severity contrast (~2.3 h), T extension on severity 3 (~66 min). Seeds 3-5 replication only if needed (new stream order only). Candidate cells that need predictions written first: (lam 1, T 150), lam = 1 T-profile at T = 550.
+
 ## 0. Housekeeping (no GPU)
 1. Commit the configs with predictions BEFORE running (`stream_factorial.yaml`, `stream_t350.yaml`, `stream_t_extension.yaml`, `stream_severity_contrast.yaml`, `stream_reset_control.yaml`); push the result CSVs.
 2. Per-segment eta* test (no GPU): `scripts/segment_vs_curvature.py` on c = 2.0 vs c = 0.5 (seed 0) with the Lanczos curvature CSV. Tells whether the extra degradation at large step sits in the segments whose local eta* is below the step.
